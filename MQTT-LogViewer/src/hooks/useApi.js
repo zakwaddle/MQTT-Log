@@ -93,13 +93,14 @@ const useApi = () => {
         return data;
     };
 
-    const addSensor = async (sensorType, deviceConfigId, sensorConfig) => {
+    const addSensor = async (sensorType, sensorName, deviceConfigId, sensorConfig) => {
         setLoading(true);
         const response = await fetch(`${BASE_URL}/sensors/add`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
                     sensor_type: sensorType,
+                    name: sensorName,
                     device_config_id: deviceConfigId,
                     sensor_config: sensorConfig
                 }
