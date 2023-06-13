@@ -264,3 +264,4 @@ cython_debug/
 
 google_token.json
 !/src/Model/ElectronApi.spec
+!/MQTT-LogViewer/build/
