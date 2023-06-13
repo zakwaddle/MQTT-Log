@@ -128,4 +128,10 @@ class DeviceSensor(Base):
 
 
 I think I have most of what is needed for the backend. 
-Can you create a number of tests to insure that what I have built in the Flask app is so far is working correctly?
+I believe the next step is to begin modifying the React app to use these endpoints. Once new devices can be added 
+and modified from the app, it should be time to begin modifying the device firmware to listen for, and react to,
+messages sent by the app.
+There are still some decisions to be made as for how to handle these configuration messages, but until the React app is
+actually able to make, modify, and notify these devices, those decisions don't seem very important.
+Before I begin to actually work on next step, do you see anything I may have missed? Or have advice on how to proceed?
+
