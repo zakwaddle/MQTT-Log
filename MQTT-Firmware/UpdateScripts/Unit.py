@@ -4,9 +4,12 @@ import json
 import os
 import time
 
+firmware_folder = os.path.abspath(f"{os.path.dirname(__file__)}/../Firmware")
+
 
 class Unit:
-    local_firmware_folder = "/Users/zakwaddle/MQTT-HomeKit-ESP32/Firmware"
+    # local_firmware_folder = "/Users/zakwaddle/MQTT-HomeKit-ESP32/Firmware"
+    local_firmware_folder = firmware_folder
     local_home_path = f"{local_firmware_folder}/HomeModule"
     ftp_home_folder = f"/upload/Firmware/HomeModule"
 
@@ -105,10 +108,3 @@ class Unit:
 
     def check_in(self):
         self.send_command("check-in")
-
-
-if __name__ == "__main__":
-    p = "/Users/zakwaddle/MQTT-HomeKit-ESP32/Firmware"
-    # print(os.path.dirname(os.path.abspath(__file__)))
-    uds = os.path.dirname(__file__)
-    print(os.path.abspath(f"{uds}/../Firmware"))
