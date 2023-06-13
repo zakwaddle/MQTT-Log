@@ -98,6 +98,7 @@ class DeviceSensor(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     sensor_type = Column(String)
+    name = Column(String)
     sensor_config = Column(JSON)
     device_config_id = Column(String, ForeignKey('device-configs.id'))
 
@@ -106,14 +107,14 @@ class DeviceSensor(Base):
 
 ```
 ### Flask Endpoints
-**GET** `/api/home/logs`\
-**POST** `/api/home/logs/add`\
-**DELETE** `/api/home/logs/entries/<int:id>`
-
 **GET** `/api/home/devices`\
 **GET** `/api/home/devices/<device_id>/sensors`\
 **POST** `/api/home/devices/add`\
 **DELETE** `/api/home/devices/<device_id>`
+
+**GET** `/api/home/logs`\
+**POST** `/api/home/logs/add`\
+**DELETE** `/api/home/logs/entries/<log_id>`
 
 **GET** `/api/home/devices/<device_id>/config`\
 **POST** `/api/home/devices/<device_id>/config`\
