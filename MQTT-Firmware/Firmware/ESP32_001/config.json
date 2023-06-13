@@ -1,0 +1,22 @@
+{
+  "unit_id": "ESP32_001",
+  "description": "weather sensor in Henry's room",
+  "wifi": {
+    "ssid": "the_interwebs",
+    "password": "935Ravine"
+  },
+  "mqtt": {
+    "server": "nookpi.local",
+    "port": 2121,
+    "username": "None",
+    "password": "None"
+  },
+  "ftp": {
+    "host": "nookpi.local",
+    "user": "microcontrollers",
+    "password": "microcontrollers"
+  },
+  "pins": {
+    "dht22": 16
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "unit_id": "ESP32_005",
+  "wifi": {
+    "ssid": "the_interwebs",
+    "password": "935Ravine"
+  },
+  "mqtt": {
+    "server": "homebridge.local",
+    "port": 2121,
+    "username": "None",
+    "password": "None"
+  },
+  "ftp": {
+    "host": "homebridge.local",
+    "user": "microcontrollers",
+    "password": "microcontrollers"
+  },
+  "topics": {},
+  "pins": {},
+  "timers": {}
+}
