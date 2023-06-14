@@ -1,15 +1,14 @@
 import {useState} from 'react';
-
-// const BASE_URL = `http://localhost:5000/api/home`
-const BASE_URL = `http://yawntsum.local/api/home`;
+const config = require('../../zrc')
 
 
 const useApi = () => {
     const [loading, setLoading] = useState(false);
+    const baseUrl = config.apiHost
 
     const fetchLogs = async () => {
         setLoading(true);
-        const response = await fetch(`${BASE_URL}/logs`);
+        const response = await fetch(`${baseUrl}/logs`);
         const data = await response.json();
         setLoading(false);
         return data;
@@ -17,7 +16,7 @@ const useApi = () => {
 
     const deleteLogEntry = async (id) => {
         setLoading(true);
-        const response = await fetch(`${BASE_URL}/logs/entries/${id}`, {
+        const response = await fetch(`${baseUrl}/logs/entries/${id}`, {
             method: 'DELETE',
         });
         const data = await response.json();
@@ -27,7 +26,7 @@ const useApi = () => {
 
     const fetchDevices = async () => {
         setLoading(true);
-        const response = await fetch(`${BASE_URL}/devices`);
+        const response = await fetch(`${baseUrl}/devices`);
         const data = await response.json();
         setLoading(false);
         return data;
@@ -35,7 +34,7 @@ const useApi = () => {
 
     const addDevice = async (deviceId, platform, displayName) => {
         setLoading(true);
-        const response = await fetch(`${BASE_URL}/devices/add`, {
+        const response = await fetch(`${baseUrl}/devices/add`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
@@ -57,7 +56,7 @@ const useApi = () => {
 
     const deleteDevice = async (id) => {
         setLoading(true);
-        const response = await fetch(`${BASE_URL}/devices/${id}`, {
+        const response = await fetch(`${baseUrl}/devices/${id}`, {
             method: 'DELETE',
         });
         const data = await response.json();
@@ -67,7 +66,7 @@ const useApi = () => {
 
     const fetchDeviceConfig = async (deviceId) => {
         setLoading(true);
-        const response = await fetch(`${BASE_URL}/devices/${deviceId}/config`);
+        const response = await fetch(`${baseUrl}/devices/${deviceId}/config`);
         const data = await response.json();
         setLoading(false);
         return data;
@@ -75,7 +74,7 @@ const useApi = () => {
 
     const updateDeviceConfig = async (id, config) => {
         setLoading(true);
-        const response = await fetch(`${BASE_URL}/devices/${id}/config`, {
+        const response = await fetch(`${baseUrl}/devices/${id}/config`, {
             method: 'PUT',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(config)
@@ -87,7 +86,7 @@ const useApi = () => {
 
     const fetchDeviceSensors = async (id) => {
         setLoading(true);
-        const response = await fetch(`${BASE_URL}/devices/${id}/sensors`);
+        const response = await fetch(`${baseUrl}/devices/${id}/sensors`);
         const data = await response.json();
         setLoading(false);
         return data;
@@ -95,7 +94,7 @@ const useApi = () => {
 
     const addSensor = async (sensorType, sensorName, deviceConfigId, sensorConfig) => {
         setLoading(true);
-        const response = await fetch(`${BASE_URL}/sensors/add`, {
+        const response = await fetch(`${baseUrl}/sensors/add`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
@@ -113,7 +112,7 @@ const useApi = () => {
 
     const updateSensorConfig = async (id, config) => {
         setLoading(true);
-        const response = await fetch(`${BASE_URL}/sensors/${id}/config`, {
+        const response = await fetch(`${baseUrl}/sensors/${id}/config`, {
             method: 'PUT',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(config)
@@ -125,7 +124,7 @@ const useApi = () => {
 
     const deleteSensor = async (id) => {
         setLoading(true);
-        const response = await fetch(`${BASE_URL}/sensors/${id}`, {
+        const response = await fetch(`${baseUrl}/sensors/${id}`, {
             method: 'DELETE',
         });
         const data = await response.json();
@@ -135,7 +134,7 @@ const useApi = () => {
 
     const checkIn = async () => {
         setLoading(true);
-        const response = await fetch(`${BASE_URL}/logs/check-in`, {
+        const response = await fetch(`${baseUrl}/logs/check-in`, {
             method: 'POST',
         });
         const data = await response.json();

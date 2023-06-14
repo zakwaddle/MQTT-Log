@@ -1,6 +1,8 @@
 import React from "react";
+const config = require('../../zrc')
 
-export default function useLogEntries(base_url){
+// export default function useLogEntries(base_url){
+export default function useLogEntries(){
     const [entries, setEntries] = React.useState([]);
     const [shouldScroll, setShouldScroll] = React.useState(true)
 
@@ -11,7 +13,7 @@ export default function useLogEntries(base_url){
 
 
     React.useEffect(() => {
-        const url = `${base_url}/logs`
+        const url = `${config.apiHost}/logs`
         fetch(url)
             .then(response => response.json())
             .then(data => {
@@ -23,7 +25,7 @@ export default function useLogEntries(base_url){
     }, []);
 
     React.useEffect(() => {
-        const url = `${base_url}/stream`
+        const url = `${config.apiHost}/stream`
         console.log(`SSE Stream: ${url}`)
         const eventSource = new EventSource(url);
 

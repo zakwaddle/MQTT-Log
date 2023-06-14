@@ -1,9 +1,11 @@
-import React, {useEffect, useState} from "react";
+import React, {useState} from "react";
 import useLogEntries from "../hooks/useLogEntries";
-import LogEntryList from "./LogEntryList";
-import AppHeader from "./AppHeader";
+import LogEntryList from "./Logs/LogEntryList";
+import LogHeader from "./Logs/LogHeader";
 import GlobalStyle from "../styles/GlobalStyles";
 import styled from 'styled-components';
+import DeviceSection from "./Devices/DeviceSection";
+
 
 const AppContainer = styled.div`
   width: 100%;
@@ -14,15 +16,19 @@ const AppContainer = styled.div`
   justify-content: center;
   align-items: center;
 `
-
-// const BASE_URL = `http://localhost:5000/api/home`
-const BASE_URL = `http://yawntsum.local/api/home`
-
+const LogSection = styled.div`
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+`
 
 export default function App() {
     const [unitId, setUnitId] = useState('');
     const [type, setType] = useState('');
-    const { entries, handleDelete, shouldScroll } = useLogEntries(BASE_URL);
+    const {entries, handleDelete, shouldScroll} = useLogEntries();
 
     const handleUnitIdChange = (event) => setUnitId(event.target.value)
     const handleTypeChange = (event) => setType(event.target.value)
@@ -34,20 +40,20 @@ export default function App() {
         (unitId === '' || entry['log']["unit_id"] === unitId) &&
         (type === '' || entry['log']["type"] === type));
 
-    useEffect(() => {
-        console.log(window.outerWidth)
-    }, [window.outerWidth])
 
     return (
         <AppContainer>
             <GlobalStyle/>
-            <AppHeader logTypes={types}
-                       unitIds={unitIds}
-                       handleIdFilter={handleUnitIdChange}
-                       handleTypeFilter={handleTypeChange}/>
-            <LogEntryList entries={filteredLogEntries}
-                          onDelete={handleDelete}
-                          shouldScroll={shouldScroll}/>
+            <DeviceSection/>
+            <LogSection>
+                <LogHeader logTypes={types}
+                           unitIds={unitIds}
+                           handleIdFilter={handleUnitIdChange}
+                           handleTypeFilter={handleTypeChange}/>
+                <LogEntryList entries={filteredLogEntries}
+                              onDelete={handleDelete}
+                              shouldScroll={shouldScroll}/>
+            </LogSection>
         </AppContainer>
     )
 }
