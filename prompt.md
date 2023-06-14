@@ -11,23 +11,23 @@ The structure of this package, and the `main.py` and `config.py` present on the 
 - home/
     - sensors/
         - __init.py
-        - DHT22.py  // Temperature/Humidity Sensor 
+        - DHT22.py         // Temperature/Humidity Sensor 
         - MotionSensor.py  // Motion Sensor
-        - DimmableLED.py  // Dimmable LED 
-        - StatusLED.py  // On Board LED to indicate Status
+        - DimmableLED.py   // Dimmable LED 
+        - StatusLED.py     // On Board LED to indicate Status
     - lib/
         - umqtt/
-            - simple.py  // MQTT Client Library 
+            - simple.py    // MQTT Client Library 
         - __init__.py
-        - ftplib.py  // FTP Client Library
+        - ftplib.py        // FTP Client Library
     - __init__.py
-    - Home.py  //  main coordiator and interface
-    - UpdateManager.py  // handles FTP connection and local filesystem interactions
-    - MQTTManager.py  // handles MQTT connection and interactions
-    - WiFiManager.py  // handles WiFi connection and interactions
-    - Timer.py  // handles platform differences for machine.Timer
-- main.py  //  loads configuration specifics from `config.py`, initializes the home client and runs main loop
-- config.py  //  device specific configurations
+    - Home.py              // main coordiator and interface
+    - UpdateManager.py     // handles FTP connection and local filesystem interactions
+    - MQTTManager.py       // handles MQTT connection and interactions
+    - WiFiManager.py       // handles WiFi connection and interactions
+    - Timer.py             // handles platform differences for machine.Timer
+- main.py                  // loads configuration specifics from `config.py`, initializes the home client and runs main loop
+- config.py                // device specific configurations
 ```
 
 This system works well. However, after a few weeks I began to notice that if something went wrong during
