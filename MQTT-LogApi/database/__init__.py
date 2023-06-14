@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from .models import ModelBase, LogEntry, HomeDevice, DeviceSensor, DeviceConfig
+from .models import ModelBase, LogEntry, HomeDevice, DeviceSensor, DeviceConfig, WifiNetwork, FTPServer, MQTTBroker
 import os
 
 engine = create_engine(os.getenv('DATABASE_URI'), pool_size=20)
@@ -112,4 +112,109 @@ def get_sensor(sensor_id):
     with Session() as session:
         sensor = session.query(DeviceSensor).filter(DeviceSensor.id == sensor_id).one()
         data = sensor.to_dict()
+    return data
+
+
+def add_wifi_network(wifi_network):
+    with Session() as session:
+        new_wifi_network = WifiNetwork(**wifi_network)
+        session.add(new_wifi_network)
+        session.commit()
+        data = new_wifi_network.to_dict()
+    return data
+
+
+def update_wifi_network(wifi_network_id, new_wifi_network):
+    with Session() as session:
+        session.query(WifiNetwork).filter(WifiNetwork.id == wifi_network_id).update(new_wifi_network)
+        session.commit()
+
+
+def delete_wifi_network(wifi_network_id):
+    with Session() as session:
+        session.query(WifiNetwork).filter(WifiNetwork.id == wifi_network_id).delete()
+        session.commit()
+
+
+def get_all_wifi_networks():
+    with Session() as session:
+        wifi_networks = session.query(WifiNetwork).all()
+        data = [network.to_dict() for network in wifi_networks]
+    return data
+
+
+def get_wifi_network(wifi_network_id):
+    with Session() as session:
+        wifi_network = session.query(WifiNetwork).filter(WifiNetwork.id == wifi_network_id).one()
+        data = wifi_network.to_dict()
+    return data
+
+
+def add_ftp_server(ftp_server):
+    with Session() as session:
+        new_ftp_server = FTPServer(**ftp_server)
+        session.add(new_ftp_server)
+        session.commit()
+        data = new_ftp_server.to_dict()
+    return data
+
+
+def update_ftp_server(ftp_server_id, new_ftp_server):
+    with Session() as session:
+        session.query(FTPServer).filter(FTPServer.id == ftp_server_id).update(new_ftp_server)
+        session.commit()
+
+
+def delete_ftp_server(ftp_server_id):
+    with Session() as session:
+        session.query(FTPServer).filter(FTPServer.id == ftp_server_id).delete()
+        session.commit()
+
+
+def get_ftp_server(ftp_server_id):
+    with Session() as session:
+        ftp_server = session.query(FTPServer).filter(FTPServer.id == ftp_server_id).one()
+        data = ftp_server.to_dict()
+    return data
+
+
+def get_all_ftp_servers():
+    with Session() as session:
+        ftp_servers = session.query(FTPServer).all()
+        data = [server.to_dict() for server in ftp_servers]
+    return data
+
+
+def add_mqtt_broker(mqtt_broker):
+    with Session() as session:
+        new_mqtt_broker = MQTTBroker(**mqtt_broker)
+        session.add(new_mqtt_broker)
+        session.commit()
+        data = new_mqtt_broker.to_dict()
+    return data
+
+
+def update_mqtt_broker(mqtt_broker_id, new_mqtt_broker):
+    with Session() as session:
+        session.query(MQTTBroker).filter(MQTTBroker.id == mqtt_broker_id).update(new_mqtt_broker)
+        session.commit()
+
+
+def delete_mqtt_broker(mqtt_broker_id):
+    with Session() as session:
+        session.query(MQTTBroker).filter(MQTTBroker.id == mqtt_broker_id).delete()
+        session.commit()
+
+
+def get_mqtt_broker(mqtt_broker_id):
+    with Session() as session:
+        mqtt_broker = session.query(MQTTBroker).filter(MQTTBroker.id == mqtt_broker_id).one()
+        data = mqtt_broker.to_dict()
+    return data
+
+
+def get_all_mqtt_brokers():
+    with Session() as session:
+        mqtt_brokers = session.query(MQTTBroker).all()
+        data = [broker.to_dict() for broker in mqtt_brokers]
     return data
