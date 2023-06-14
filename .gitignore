@@ -267,3 +267,4 @@ google_token.json
 !/MQTT-LogViewer/build/
 /MQTT-LogApi/log_entries.db
 MQTT-LogApi/log_entries.db
+MQTT-LogApi/log_entries.db
