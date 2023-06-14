@@ -9,9 +9,7 @@ log_blueprint = Blueprint('log_blueprint', __name__)
 
 @log_blueprint.route('/')
 def home():
-    print('root request')
     data = get_logs()
-    print(data)
     return jsonify(data)
 
 
@@ -26,7 +24,7 @@ def add_log_entry():
 @log_blueprint.route('/entries/<int:id>', methods=['DELETE'])
 def delete_log_entry(id):
     delete_log(id)
-    print(f"deleted id: {id}")
+    # print(f"deleted id: {id}")
     return jsonify({'message': 'Log entry deleted'})
 
 
