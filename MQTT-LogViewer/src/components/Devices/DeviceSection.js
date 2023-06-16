@@ -2,39 +2,41 @@ import React, {useState, useEffect} from "react";
 import styled from "styled-components";
 import useApi from "../../hooks/useApi";
 import AddDeviceForm from "./AddDeviceForm";
+import DeviceConfigs from "../Configs/DeviceConfigs";
+import {useSelector} from "react-redux";
 
 const DeviceSectionContainer = styled.div`
   width: 100%;
   display: flex;
-  //flex-direction: column;
-  //justify-content: center;
-  //align-items: center;
+ 
 `
 
 const DeviceListContainer = styled.div`
-  //width: 100%;
   display: flex;
   flex-direction: column;
-  flex: 1 0;
-
-  //justify-content: center;
-  //align-items: center;
+  min-height: 8em;
+  width: 48%;
+  padding: .5em;
+  margin: .5em;
+  background-color: white;
+  border-radius: 1em;
 `
 const ConfigContainer = styled.div`
-  //width: 100%;
   display: flex;
   flex-direction: column;
-  flex: 1 0;
-
-  //justify-content: center;
-  //align-items: center;
+  flex: 2 1;
 `
 const DeviceContainer = styled.div`
-  background-color: ${props=> props.selected ? 'grey' : undefined};
+  background-color: ${props=> props['selected'] ? 'grey' : undefined};
 `
-
+const Button = styled.button`
+  font-family: monospace;
+  font-size: inherit;
+  background-color: inherit;
+  border-radius: .3em;
+  border-width: 1px;
+`
 const Device = ({deviceData, selected, setSelected}) => {
-    // const [isSelected, setIsSelected] = useState(false)
 
     return (
         <DeviceContainer selected={selected === deviceData.id} onClick={() => setSelected(deviceData.id)}>
@@ -44,18 +46,11 @@ const Device = ({deviceData, selected, setSelected}) => {
 }
 
 const DeviceSection = () => {
-    const [devices, setDevices] = useState([])
     const [selectedDevice, setSelectedDevice] = useState([])
-    const [showForm, setShowForm] = useState(false)
-    const hideAddDevice = () => setShowForm(false)
-    const showAddDevice = () => setShowForm(true)
-    const {fetchDevices} = useApi()
-    useEffect(() => {
-        fetchDevices().then(data=> {
-            console.log(data)
-            setDevices(data)
-        })
-    },[])
+    // const [showForm, setShowForm] = useState(false)
+    // const hideAddDevice = () => setShowForm(false)
+    // const showAddDevice = () => setShowForm(true)
+    const devices = useSelector(state => state['globalState'].devices)
 
     return (
         <DeviceSectionContainer>
@@ -63,15 +58,10 @@ const DeviceSection = () => {
                 <h3>Devices</h3>
                 {devices.map(device => <Device key={device.id} deviceData={device}
                                                selected={selectedDevice} setSelected={setSelectedDevice}/>)}
-            <div><button onClick={showAddDevice}>add device</button></div>
+            {/*<Button onClick={showAddDevice}>add device</Button>*/}
             </DeviceListContainer>
-            {showForm && <AddDeviceForm hideForm={hideAddDevice}/>}
-            <ConfigContainer>
-                <div>WiFi</div>
-                <div>MQTT</div>
-                <div>FTP</div>
-                <div>Sensors</div>
-            </ConfigContainer>
+            {/*{showForm && <AddDeviceForm hideForm={hideAddDevice}/>}*/}
+            <DeviceConfigs/>
         </DeviceSectionContainer>
     )
 }

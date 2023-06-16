@@ -1,59 +1,53 @@
-import React, {useState} from "react";
-import useLogEntries from "../hooks/useLogEntries";
-import LogEntryList from "./Logs/LogEntryList";
-import LogHeader from "./Logs/LogHeader";
+import React, {useEffect} from "react";
 import GlobalStyle from "../styles/GlobalStyles";
 import styled from 'styled-components';
 import DeviceSection from "./Devices/DeviceSection";
+import Logs from "./Logs";
+import useApi from "../hooks/useApi";
+import {useDispatch, useSelector} from "react-redux";
+import {globalStateActions} from "../store/globalStateSlice";
+import useSSE from "../hooks/useSSE";
+import useLogEntries from "../hooks/useLogEntries";
+import NewDeviceBanner from "./Devices/NewDeviceBanner";
 
 
 const AppContainer = styled.div`
+  height: 100%;
   width: 100%;
   font-family: monospace;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
-`
-const LogSection = styled.div`
-  width: 100%;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
 `
 
 export default function App() {
-    const [unitId, setUnitId] = useState('');
-    const [type, setType] = useState('');
-    const {entries, handleDelete, shouldScroll} = useLogEntries();
+    useSSE();
+    useLogEntries();
 
-    const handleUnitIdChange = (event) => setUnitId(event.target.value)
-    const handleTypeChange = (event) => setType(event.target.value)
+    const dispatch = useDispatch();
+    const {fetchDevices} = useApi();
+    const numNew = useSelector(state => state['globalState']['newDevices']).length
 
-
-    const unitIds = [...new Set(entries.map(entry => entry['log']['unit_id']))];
-    const types = [...new Set(entries.map(entry => entry['log']['type']))];
-    const filteredLogEntries = entries.filter(entry =>
-        (unitId === '' || entry['log']["unit_id"] === unitId) &&
-        (type === '' || entry['log']["type"] === type));
+    useEffect(() => {
+        fetchDevices().then(data => {
+            const newDevices = data.filter(device => device.display_name === null)
+            const devices = data.filter(device => device.display_name !== null)
+            dispatch(globalStateActions.updateDevices(devices));
+            dispatch(globalStateActions.updateNewDevices(newDevices));
+        });
+    }, []);
 
 
     return (
         <AppContainer>
             <GlobalStyle/>
+            {numNew > 0 &&
+                <NewDeviceBanner/>
+            }
             <DeviceSection/>
-            <LogSection>
-                <LogHeader logTypes={types}
-                           unitIds={unitIds}
-                           handleIdFilter={handleUnitIdChange}
-                           handleTypeFilter={handleTypeChange}/>
-                <LogEntryList entries={filteredLogEntries}
-                              onDelete={handleDelete}
-                              shouldScroll={shouldScroll}/>
-            </LogSection>
+            <Logs/>
         </AppContainer>
-    )
-}
+    );
+};

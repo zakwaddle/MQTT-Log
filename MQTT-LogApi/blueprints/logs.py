@@ -17,7 +17,7 @@ def home():
 def add_log_entry():
     log_data = request.json
     new_log = add_log(log_data)
-    sse.publish({"message": "New log added", "log": new_log})
+    sse.publish({"message": "New log added", "type": "log", "log": new_log})
     return jsonify(success=True)
 
 

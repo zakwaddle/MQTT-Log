@@ -1,4 +1,5 @@
 import {useState} from 'react';
+
 const config = require('../../zrc')
 
 
@@ -131,6 +132,146 @@ const useApi = () => {
         setLoading(false);
         return data;
     };
+    const fetchWifiNetworks = async () => {
+        setLoading(true);
+        const response = await fetch(`${baseUrl}/configs/wifi-networks`);
+        const data = await response.json();
+        setLoading(false);
+        return data;
+    };
+
+    const addWifiNetwork = async (ssid, password) => {
+        setLoading(true);
+        const response = await fetch(`${baseUrl}/configs/wifi-networks`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                ssid: ssid,
+                password: password,
+                is_default: true
+            })
+        });
+        const data = await response.json();
+        setLoading(false);
+        return data;
+    };
+
+    const updateWifiNetwork = async (wifiNetworkId, wifiNetworkData) => {
+        setLoading(true);
+        const response = await fetch(`${baseUrl}/configs/wifi-networks/${wifiNetworkId}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(wifiNetworkData)
+        });
+        const data = await response.json();
+        setLoading(false);
+        return data;
+    };
+
+    const deleteWifiNetwork = async (wifiNetworkId) => {
+        setLoading(true);
+        const response = await fetch(`${baseUrl}/configs/wifi-networks/${wifiNetworkId}`, {
+            method: 'DELETE'
+        });
+        const data = await response.json();
+        setLoading(false);
+        return data;
+    };
+
+    const fetchFtpServers = async () => {
+        setLoading(true);
+        const response = await fetch(`${baseUrl}/configs/ftp-servers`);
+        const data = await response.json();
+        setLoading(false);
+        return data;
+    };
+
+    const addFtpServer = async (hostAddress, username, password) => {
+        setLoading(true);
+        const response = await fetch(`${baseUrl}/configs/ftp-servers`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                host_address: hostAddress,
+                username: username,
+                password: password,
+                is_default: true
+            })
+        });
+        const data = await response.json();
+        setLoading(false);
+        return data;
+    };
+
+    const updateFtpServer = async (ftpServerId, ftpServerData) => {
+        setLoading(true);
+        const response = await fetch(`${baseUrl}/configs/ftp-servers/${ftpServerId}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(ftpServerData)
+        });
+        const data = await response.json();
+        setLoading(false);
+        return data;
+    };
+
+    const deleteFtpServer = async (ftpServerId) => {
+        setLoading(true);
+        const response = await fetch(`${baseUrl}/configs/ftp-servers/${ftpServerId}`, {
+            method: 'DELETE'
+        });
+        const data = await response.json();
+        setLoading(false);
+        return data;
+    };
+
+    const fetchMqttBrokers = async () => {
+        setLoading(true);
+        const response = await fetch(`${baseUrl}/configs/mqtt-brokers`);
+        const data = await response.json();
+        setLoading(false);
+        return data;
+    };
+
+    const addMqttBroker = async (hostAddress, port, username, password) => {
+        setLoading(true);
+        const response = await fetch(`${baseUrl}/configs/mqtt-brokers`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                host_address: hostAddress,
+                port: port,
+                username: username,
+                password: password,
+                is_default: true
+            })
+        });
+        const data = await response.json();
+        setLoading(false);
+        return data;
+    };
+
+    const updateMqttBroker = async (mqttBrokerId, mqttBrokerData) => {
+        setLoading(true);
+        const response = await fetch(`${baseUrl}/configs/mqtt-brokers/${mqttBrokerId}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(mqttBrokerData)
+        });
+        const data = await response.json();
+        setLoading(false);
+        return data;
+    };
+    const deleteMqttBroker = async (mqttBrokerId) => {
+        setLoading(true);
+        const response = await fetch(`${baseUrl}/configs/mqtt-brokers/${mqttBrokerId}`, {
+            method: 'DELETE'
+        });
+        const data = await response.json();
+        setLoading(false);
+        return data;
+    };
+
 
     const checkIn = async () => {
         setLoading(true);
@@ -141,6 +282,7 @@ const useApi = () => {
         setLoading(false);
         return data;
     };
+
     return {
         fetchLogs,
         deleteLogEntry,
@@ -154,8 +296,21 @@ const useApi = () => {
         updateSensorConfig,
         deleteSensor,
         checkIn,
+        fetchWifiNetworks,
+        addWifiNetwork,
+        updateWifiNetwork,
+        deleteWifiNetwork,
+        fetchFtpServers,
+        addFtpServer,
+        updateFtpServer,
+        deleteFtpServer,
+        fetchMqttBrokers,
+        addMqttBroker,
+        updateMqttBroker,
+        deleteMqttBroker,
         loading
     };
 };
+
 
 export default useApi;

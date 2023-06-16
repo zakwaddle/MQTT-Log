@@ -1,8 +1,24 @@
 from flask import Blueprint, request, jsonify
-from database import (get_devices, add_device, delete_device, get_device_config,
-                      update_device_config, delete_device_config, add_device_config, get_device_sensors)
+from database import (get_devices, add_device, delete_device, get_device_config, get_device,
+                      update_device_config, delete_device_config, add_device_config, get_device_sensors,
+                      get_wifi_network, get_mqtt_broker, get_ftp_server)
+from flask_sse import sse
 
 device_blueprint = Blueprint('device_blueprint', __name__)
+
+
+def create_default_config():
+    wifi = get_wifi_network(1)
+    mqtt_broker = get_mqtt_broker(1)
+    ftp = get_ftp_server(1)
+    default_config = {}
+    if wifi:
+        default_config.update({"wifi_network_id": 1})
+    if mqtt_broker:
+        default_config.update({"mqtt_broker_id": 1})
+    if ftp:
+        default_config.update({"ftp_server_id": 1})
+    return default_config
 
 
 @device_blueprint.route('/')
@@ -15,7 +31,16 @@ def get_all_devices():
 def add_new_device():
     device_data = request.json
     new_device = add_device(device_data)
-    return jsonify(success=True, device=new_device)
+    add_device_config(new_device['id'], **create_default_config())
+    device = get_device(new_device['id'])
+    sse.publish({"message": "New device added", "type": "device", "device": device})
+    return jsonify(success=True, device=device)
+
+
+@device_blueprint.route('/<string:device_id>')
+def get_single_device(device_id):
+    data = get_device(device_id)
+    return jsonify(data)
 
 
 @device_blueprint.route('/<string:device_id>', methods=['DELETE'])
