@@ -48,9 +48,21 @@ def get_device(device_id):
     with Session() as session:
         try:
             device = session.query(HomeDevice).filter(HomeDevice.id == device_id).one()
-            data = device.to_dict()
+            data = device
         except NoResultFound:
-            data = {}
+            data = None
+    return data
+
+
+def update_display_name(device_id, new_name):
+    with Session() as session:
+        try:
+            device = session.query(HomeDevice).filter(HomeDevice.id == device_id).one()
+            device.display_name = new_name
+            data = device
+            session.commit()
+        except NoResultFound:
+            data = None
     return data
 
 

@@ -63,6 +63,18 @@ const useApi = () => {
         const data = await response.json();
         setLoading(false);
         return data;
+    }
+
+    const updateDeviceName = async (id, newName) => {
+        setLoading(true);
+        const response = await fetch(`${baseUrl}/devices/${id}/display_name`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({display_name: newName})
+        });
+        const data = await response.json();
+        setLoading(false);
+        return data;
     };
 
     const fetchDeviceConfig = async (deviceId) => {
@@ -288,6 +300,7 @@ const useApi = () => {
         deleteLogEntry,
         fetchDevices,
         addDevice,
+        updateDeviceName,
         deleteDevice,
         fetchDeviceConfig,
         updateDeviceConfig,

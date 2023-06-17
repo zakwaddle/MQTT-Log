@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from database import (get_devices, add_device, delete_device, get_device_config, get_device,
+from database import (get_devices, add_device, update_display_name, delete_device, get_device_config, get_device,
                       update_device_config, delete_device_config, add_device_config, get_device_sensors,
                       get_wifi_network, get_mqtt_broker, get_ftp_server)
 from flask_sse import sse
@@ -40,7 +40,18 @@ def add_new_device():
 @device_blueprint.route('/<string:device_id>')
 def get_single_device(device_id):
     data = get_device(device_id)
+    data = data.to_dict() if data is not None else {}
     return jsonify(data)
+
+
+@device_blueprint.route('/<string:device_id>/display_name', methods=['POST'])
+def update_device_display_name(device_id):
+    new_name = request.json
+    name = new_name.get('display_name')
+    if name is not None:
+        data = update_display_name(device_id, name)
+        return jsonify(success=True, device=data.to_dict())
+    return jsonify(success=False, device=None)
 
 
 @device_blueprint.route('/<string:device_id>', methods=['DELETE'])
