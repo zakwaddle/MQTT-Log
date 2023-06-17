@@ -1,19 +1,22 @@
 import React, {useState} from 'react';
 import useApi from "../../hooks/useApi";
 import {FormContainer, FormInput, FormLabel} from "../../styles/FormStyles";
+import {useDispatch} from "react-redux";
+import {globalStateActions} from "../../store/globalStateSlice";
 
 
-const AddFTPServerForm = ({hideForm}) => {
+const AddFTPServerForm = ({handleCancel}) => {
+    const dispatch = useDispatch()
+    const {addFtpServer} = useApi()
+
     const [hostAddress, setHostAddress] = useState('');
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
 
-    const {addFtpServer} = useApi()
     const clearFields = () => {
         setHostAddress('');
         setUsername('');
         setPassword('');
-
     }
 
     const handleSubmit = async (event) => {
@@ -24,7 +27,9 @@ const AddFTPServerForm = ({hideForm}) => {
                 console.log(data);
                 if (data && data.success) {
                     clearFields();
-                    hideForm()
+                    dispatch(globalStateActions.updateFtpServer(data['ftp_server']))
+                    dispatch(globalStateActions.updateShowConnectionForm("None"))
+                    // hideForm()
                 }
             })
     };
@@ -45,6 +50,7 @@ const AddFTPServerForm = ({hideForm}) => {
             </FormLabel>
 
             <div>
+                <button onClick={handleCancel && handleCancel}>Cancel</button>
                 <button type="submit">Save</button>
             </div>
         </FormContainer>

@@ -9,6 +9,7 @@ import {globalStateActions} from "../store/globalStateSlice";
 import useSSE from "../hooks/useSSE";
 import useLogEntries from "../hooks/useLogEntries";
 import NewDeviceBanner from "./Devices/NewDeviceBanner";
+import DeviceControlSection from "./DeviceControlSection";
 
 
 const AppContainer = styled.div`
@@ -43,10 +44,11 @@ export default function App() {
     return (
         <AppContainer>
             <GlobalStyle/>
-            {numNew > 0 &&
-                <NewDeviceBanner/>
-            }
-            <DeviceSection/>
+            {/*{numNew > 0 &&*/}
+            {/*    <NewDeviceBanner/>*/}
+            {/*}*/}
+            {/*<DeviceSection/>*/}
+            <DeviceControlSection/>
             <Logs/>
         </AppContainer>
     );

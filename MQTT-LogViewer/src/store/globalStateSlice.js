@@ -10,7 +10,9 @@ const initialState = {
     wifiNetwork: null,
     ftpServer: null,
     mqttBroker: null,
-    shouldScroll: true
+    shouldScroll: true,
+    menuSelection: 'Devices',
+    showConnectionForm: 'None'
 
 }
 const globalStateSlice = createSlice({
@@ -57,6 +59,12 @@ const globalStateSlice = createSlice({
         },
         updateShouldScroll(state, action) {
             state.shouldScroll = action.payload
+        },
+        updateMenuSelection(state, action) {
+            state.menuSelection = action.payload
+        },
+        updateShowConnectionForm(state, action) {
+            state.showConnectionForm = action.payload
         },
     }
 })

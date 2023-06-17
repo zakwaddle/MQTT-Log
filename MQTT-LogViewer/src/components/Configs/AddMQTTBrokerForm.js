@@ -1,15 +1,18 @@
 import React, {useState} from 'react';
 import useApi from "../../hooks/useApi";
 import {FormContainer, FormInput, FormLabel} from "../../styles/FormStyles";
+import {useDispatch} from "react-redux";
+import {globalStateActions} from "../../store/globalStateSlice";
 
 
-
-const AddMQTTBrokerForm = ({hideForm}) => {
+const AddMQTTBrokerForm = ({handleCancel}) => {
     const [hostAddress, setHostAddress] = useState('');
     const [port, setPort] = useState(1883);
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [isDefault, setIsDefault] = useState(false);
+
+    const dispatch = useDispatch()
 
 
     const {addMqttBroker} = useApi()
@@ -29,7 +32,8 @@ const AddMQTTBrokerForm = ({hideForm}) => {
                 console.log(data);
                 if (data && data.success) {
                     clearFields();
-                    hideForm && hideForm()
+                    dispatch(globalStateActions.updateMqttBroker(data['mqtt_broker']))
+                    handleCancel && handleCancel()
                 }
             })
     };
@@ -54,6 +58,7 @@ const AddMQTTBrokerForm = ({hideForm}) => {
             </FormLabel>
 
             <div>
+                <button onClick={handleCancel && handleCancel}>Cancel</button>
                 <button type="submit">Save</button>
             </div>
         </FormContainer>

@@ -2,19 +2,20 @@ import React, {useState} from 'react';
 import useApi from "../../hooks/useApi";
 import styled from "styled-components";
 import {FormContainer, FormInput, FormLabel} from "../../styles/FormStyles";
+import {useDispatch} from "react-redux";
+import {globalStateActions} from "../../store/globalStateSlice";
 
-const AddWifiForm = ({addNew, hideForm}) => {
+// const AddWifiForm = ({addNew, hideForm}) => {
+const AddWifiForm = ({handleCancel}) => {
     const [ssid, setSSID] = useState('');
     const [password, setPassword] = useState('');
-    const [isDefault, setIsDefault] = useState(false);
 
     const {addWifiNetwork} = useApi()
     const clearFields = () => {
         setSSID('');
         setPassword('');
-        setIsDefault(false)
     }
-
+    const dispatch = useDispatch()
     const handleSubmit = async (event) => {
         event.preventDefault();
 
@@ -23,8 +24,8 @@ const AddWifiForm = ({addNew, hideForm}) => {
                 console.log(data);
                 if (data && data.success) {
                     clearFields();
-                    addNew && addNew(data['wifi_network'])
-                    hideForm && hideForm()
+                    dispatch(globalStateActions.updateWifiNetwork(data['wifi_network']))
+                    dispatch(globalStateActions.updateShowConnectionForm("None"))
                 }
             })
     };
@@ -39,12 +40,9 @@ const AddWifiForm = ({addNew, hideForm}) => {
                 Password
                 <FormInput type="password" value={password} onChange={e => setPassword(e.target.value)}/>
             </FormLabel>
-            {/*<FormLabel>*/}
-            {/*    Default*/}
-            {/*    <input type="checkbox" checked={isDefault} onChange={e => setIsDefault(e.target.checked)}/>*/}
-            {/*</FormLabel>*/}
 
             <div>
+                <button onClick={handleCancel && handleCancel}>Cancel</button>
                 <button type="submit">Save</button>
             </div>
         </FormContainer>
