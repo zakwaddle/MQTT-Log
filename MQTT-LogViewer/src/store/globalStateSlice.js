@@ -12,6 +12,7 @@ const initialState = {
     mqttBroker: null,
     shouldScroll: true,
     menuSelection: 'Devices',
+    selectedDevice: null,
     showConnectionForm: 'None'
 
 }
@@ -65,6 +66,9 @@ const globalStateSlice = createSlice({
         },
         updateShowConnectionForm(state, action) {
             state.showConnectionForm = action.payload
+        },
+        updateSelectedDevice(state, action) {
+            state.selectedDevice = action.payload
         },
     }
 })

@@ -1,8 +1,8 @@
 import React from "react";
 import styled from "styled-components";
 import {useSelector} from "react-redux";
-import AddWifiForm from "./AddWifiForm";
-import AddMQTTBrokerForm from "./AddMQTTBrokerForm";
+import AddWifiForm from "../Connections/AddWifiForm";
+import AddMQTTBrokerForm from "../Connections/AddMQTTBrokerForm";
 import useDeviceConfigs from "../../hooks/useDeviceConfigs";
 
 const ConfigBox = styled.div`

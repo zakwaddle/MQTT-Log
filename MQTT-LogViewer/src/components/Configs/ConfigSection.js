@@ -1,9 +1,9 @@
 import React, {useState, useEffect} from "react";
 import styled from "styled-components";
 import useApi from "../../hooks/useApi";
-import AddWifiForm from "./AddWifiForm";
-import AddFTPServerForm from "./AddFTPServerForm";
-import AddMQTTBrokerForm from "./AddMQTTBrokerForm";
+import AddWifiForm from "../Connections/AddWifiForm";
+import AddFTPServerForm from "../Connections/AddFTPServerForm";
+import AddMQTTBrokerForm from "../Connections/AddMQTTBrokerForm";
 import {useDispatch, useSelector} from "react-redux";
 import {globalStateActions} from "../../store/globalStateSlice";
 

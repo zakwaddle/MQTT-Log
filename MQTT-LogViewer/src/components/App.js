@@ -1,14 +1,14 @@
 import React, {useEffect} from "react";
 import GlobalStyle from "../styles/GlobalStyles";
 import styled from 'styled-components';
-import DeviceSection from "./Devices/DeviceSection";
+// import DeviceSection from "./Devices/DeviceSection";
 import Logs from "./Logs";
 import useApi from "../hooks/useApi";
 import {useDispatch, useSelector} from "react-redux";
 import {globalStateActions} from "../store/globalStateSlice";
 import useSSE from "../hooks/useSSE";
 import useLogEntries from "../hooks/useLogEntries";
-import NewDeviceBanner from "./Devices/NewDeviceBanner";
+// import NewDeviceBanner from "./Devices/NewDeviceBanner";
 import DeviceControlSection from "./DeviceControlSection";
 
 
@@ -29,7 +29,7 @@ export default function App() {
 
     const dispatch = useDispatch();
     const {fetchDevices} = useApi();
-    const numNew = useSelector(state => state['globalState']['newDevices']).length
+    // const numNew = useSelector(state => state['globalState']['newDevices']).length
 
     useEffect(() => {
         fetchDevices().then(data => {
