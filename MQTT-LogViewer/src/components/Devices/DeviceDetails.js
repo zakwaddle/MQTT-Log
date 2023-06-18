@@ -31,10 +31,11 @@ const SectionContainer = styled.div`
 const DeviceDetailsContainer = styled.div`
   width: 40%;
   height: available;
-  background-color: white;
+  
   display: flex;
   flex-direction: column;
-  //justify-content: space-evenly;
+  
+  background-color: white;
   padding: 1em;
 
   border-style: solid;
@@ -46,8 +47,8 @@ const DeviceDetails = () => {
     const [view, setView] = useState('main')
     const selectedDevice = useSelector(state => state['globalState']['selectedDevice'])
     const menuSelection = useSelector(state => state['globalState']['menuSelection'])
-    const isVisable = menuSelection === 'Devices'
-    if (!selectedDevice || !isVisable) {
+    const isVisible = menuSelection === 'Devices'
+    if (!selectedDevice || !isVisible) {
         return <InfoBox/>
     }
 
