@@ -13,6 +13,7 @@ export const InfoBox = styled.div`
   display: flex;
   flex-direction: column;
   padding: 1em;
+  
   border-style: solid;
   border-radius: 1em;
   border-width: 1px;
