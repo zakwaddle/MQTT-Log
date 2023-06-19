@@ -48,7 +48,7 @@ def get_device(device_id):
     with Session() as session:
         try:
             device = session.query(HomeDevice).filter(HomeDevice.id == device_id).one()
-            data = device
+            data = device.to_dict()
         except NoResultFound:
             data = None
     return data

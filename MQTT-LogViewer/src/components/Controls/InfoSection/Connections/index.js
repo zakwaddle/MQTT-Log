@@ -1,11 +1,11 @@
 import {useDispatch, useSelector} from "react-redux";
-import {globalStateActions} from "../../store/globalStateSlice";
+import {globalStateActions} from "../../../../store/globalStateSlice";
 import React from "react";
-import {Button, CenteredRow, InfoBox, Section, SectionTitle} from "../../styles/SectionStyles";
-import AddMQTTBrokerForm from "./AddMQTTBrokerForm";
-import AddWifiForm from "./AddWifiForm";
-import AddFTPServerForm from "./AddFTPServerForm";
-import {Property} from "../UI/Property";
+import {Button, CenteredRow, Section, SectionTitle} from "../../../../styles/SectionStyles";
+import AddMQTTBrokerForm from "../../Forms/AddMQTTBrokerForm";
+import AddWifiForm from "../../Forms/AddWifiForm";
+import AddFTPServerForm from "../../Forms/AddFTPServerForm";
+import {Property} from "../../../UI/Property";
 
 const WifiSection = ({wifi}) => {
     const dispatch = useDispatch()
@@ -81,6 +81,9 @@ const FTPSection = ({ftp}) => {
 }
 
 
+const Wrapper = ({children}) => {
+    return ([...children])
+}
 const ConnectionSection = () => {
     const dispatch =  useDispatch()
     const wifi = useSelector(state => state['globalState']['wifiNetwork'])
@@ -88,37 +91,38 @@ const ConnectionSection = () => {
     const mqtt = useSelector(state => state['globalState']['mqttBroker'])
     const connectionKey = useSelector(state => state['globalState']['showConnectionForm'])
     const handleCancel = () => dispatch(globalStateActions.updateShowConnectionForm('None'))
+
     if (connectionKey === 'None') {
         return (
-            <InfoBox>
+            <Wrapper>
                 <WifiSection wifi={wifi}/>
                 <MQTTSection mqtt={mqtt}/>
                 <FTPSection ftp={ftp}/>
-            </InfoBox>
+            </Wrapper>
         )
     }
     if (connectionKey === 'MQTT') {
         return (
-            <InfoBox>
+            <Wrapper>
                 <SectionTitle>MQTT Broker</SectionTitle>
                 <AddMQTTBrokerForm handleCancel={handleCancel}/>
-            </InfoBox>
+            </Wrapper>
         )
     }
     if (connectionKey === 'WIFI') {
         return (
-            <InfoBox>
+            <Wrapper>
                 <SectionTitle>Wifi Network</SectionTitle>
                 <AddWifiForm handleCancel={handleCancel}/>
-            </InfoBox>
+            </Wrapper>
         )
     }
     if (connectionKey === 'FTP') {
         return (
-            <InfoBox>
+            <Wrapper>
                 <SectionTitle>FTP Server</SectionTitle>
                 <AddFTPServerForm handleCancel={handleCancel}/>
-            </InfoBox>
+            </Wrapper>
         )
     }
 }

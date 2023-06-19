@@ -1,8 +1,8 @@
 import React, {useState} from 'react';
-import useApi from "../../hooks/useApi";
-import {FormContainer, FormInput, FormLabel} from "../../styles/FormStyles";
+import useApi from "../../../hooks/useApi";
+import {FormContainer, FormInput, FormLabel} from "../../../styles/FormStyles";
 import {useDispatch} from "react-redux";
-import {globalStateActions} from "../../store/globalStateSlice";
+import {globalStateActions} from "../../../store/globalStateSlice";
 
 
 const AddMQTTBrokerForm = ({handleCancel}) => {

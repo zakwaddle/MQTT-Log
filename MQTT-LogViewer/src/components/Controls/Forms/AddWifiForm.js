@@ -1,9 +1,9 @@
 import React, {useState} from 'react';
-import useApi from "../../hooks/useApi";
+import useApi from "../../../hooks/useApi";
 import styled from "styled-components";
-import {FormContainer, FormInput, FormLabel} from "../../styles/FormStyles";
+import {FormContainer, FormInput, FormLabel} from "../../../styles/FormStyles";
 import {useDispatch} from "react-redux";
-import {globalStateActions} from "../../store/globalStateSlice";
+import {globalStateActions} from "../../../store/globalStateSlice";
 
 // const AddWifiForm = ({addNew, hideForm}) => {
 const AddWifiForm = ({handleCancel}) => {

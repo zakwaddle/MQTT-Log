@@ -33,6 +33,7 @@ def add_new_device():
     new_device = add_device(device_data)
     add_device_config(new_device['id'], **create_default_config())
     device = get_device(new_device['id'])
+    # data = device.to_dict() if device is not None else {}
     sse.publish({"message": "New device added", "type": "device", "device": device})
     return jsonify(success=True, device=device)
 
@@ -40,7 +41,7 @@ def add_new_device():
 @device_blueprint.route('/<string:device_id>')
 def get_single_device(device_id):
     data = get_device(device_id)
-    data = data.to_dict() if data is not None else {}
+    # data = data.to_dict() if data is not None else {}
     return jsonify(data)
 
 

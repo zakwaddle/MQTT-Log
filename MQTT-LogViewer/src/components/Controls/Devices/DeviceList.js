@@ -1,10 +1,9 @@
 import React, {useState} from "react";
 import styled from "styled-components";
-import useApi from "../../hooks/useApi";
-import DeviceConfigs from "../Configs/DeviceConfigs";
+import useApi from "../../../hooks/useApi";
 import {useDispatch, useSelector} from "react-redux";
-import {globalStateActions} from "../../store/globalStateSlice";
-import {PropStack} from "../UI/Property";
+import {globalStateActions} from "../../../store/globalStateSlice";
+import {PropStack} from "../../UI/Property";
 
 const DeviceSectionContainer = styled.div`
   width: 100%;
@@ -26,11 +25,9 @@ const DeviceContainer = styled.div`
   background-color: ${props => props['selected'] ? 'grey' : undefined};
   display: flex;
   justify-content: space-evenly;
+  border: 1px solid black;
   border-radius: 1em;
-  border-width: 1px;
-  border-color: black;
-  border-style: solid;
-  padding: .5em;
+  padding: .25em;
   margin: .25em;
   align-items: center;
 `
@@ -107,7 +104,7 @@ const DeviceSetupRow = styled.div`
   display: flex;
   justify-content: space-evenly;
 `
-const DeviceSetup = ({device, setShowSetup}) => {
+export const DeviceSetup = ({device, setShowSetup}) => {
     const [newName, setNewName] = useState("")
 
     const {updateDeviceName} = useApi()

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 from .ModelBase import ModelBase
 
@@ -31,5 +31,5 @@ class DeviceConfig(ModelBase):
             "wifi_network": self.wifi_network.to_dict() if self.wifi_network else None,
             "ftp_server": self.ftp_server.to_dict() if self.ftp_server else None,
             "mqtt_broker": self.mqtt_broker.to_dict() if self.mqtt_broker else None,
-            "sensors": [s.to_dict() for s in self.sensors if self.sensors]
+            "sensors": [s.to_dict() for s in self.sensors] if self.sensors else []
         }
