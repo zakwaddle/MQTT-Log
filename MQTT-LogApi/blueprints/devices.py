@@ -51,7 +51,7 @@ def update_device_display_name(device_id):
     name = new_name.get('display_name')
     if name is not None:
         data = update_display_name(device_id, name)
-        return jsonify(success=True, device=data.to_dict())
+        return jsonify(success=True, device=data)
     return jsonify(success=False, device=None)
 
 

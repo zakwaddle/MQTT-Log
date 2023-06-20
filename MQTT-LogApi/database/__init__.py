@@ -59,8 +59,8 @@ def update_display_name(device_id, new_name):
         try:
             device = session.query(HomeDevice).filter(HomeDevice.id == device_id).one()
             device.display_name = new_name
-            data = device
             session.commit()
+            data = device.to_dict()
         except NoResultFound:
             data = None
     return data
