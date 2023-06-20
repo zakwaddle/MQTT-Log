@@ -61,14 +61,16 @@ class MotionSensor:
 
 
 class MQTTMotionSensor:
-    def __init__(self, motion_sensor: MotionSensor, mqtt_client, name=None):
+    def __init__(self, motion_sensor: MotionSensor, mqtt_client, name=None, state_topic=None, discovery_topic=None):
         self.motion_sensor = motion_sensor
         self.mqtt_client = mqtt_client
         self.sensor_index = self.motion_sensor.timer_n
 
         self.name = f"motion_{self.sensor_index}" if name is None else name
-        self.topic = f"homeassistant/binary_sensor/{self.mqtt_client.unit_id}/{self.name.lower().replace(' ', '_')}"
-        self.state_topic = f"{self.topic}/state"
+        # self.topic = f"homeassistant/binary_sensor/{self.mqtt_client.unit_id}/{self.name.lower().replace(' ', '_')}"
+        # self.state_topic = f"{self.topic}/state"
+        self.state_topic = state_topic
+        self.discovery_topic = discovery_topic
         self.motion_sensor.set_on_motion_detected(self.publish_last_motion)
         self.motion_sensor.set_on_motion_not_detected(self.publish_last_motion)
 
@@ -84,20 +86,12 @@ class MQTTMotionSensor:
         self.topic = f"homeassistant/binary_sensor/{self.mqtt_client.unit_id}/{self.name.lower().replace(' ', '_')}"
 
     def publish_discovery(self, device_info):
-        unit_id = self.mqtt_client.unit_id
-#         discovery_topic = f"homeassistant/{unit_id}/motion/config"
         discovery_topic = f"{self.topic}/config"
         print("Motion Sensor Discovery Topic: ", discovery_topic)
         print("Motion Sensor State Topic: ", self.state_topic)
         config = {
             "name": self.name,
             "device_class": "motion",
-#             "device": {
-#                 "name": "zAutomation Circuit",
-#                 "manufacturer": "Zak",
-#                 "model": "ESP32-Circuit",
-#                 "identifiers": f"{self.mqtt_client.unit_id}"
-#             },
             "device": device_info,
             "unique_id": f"{self.mqtt_client.unit_id}_{self.sensor_index}",
             "payload_off": "0",
@@ -106,11 +100,6 @@ class MQTTMotionSensor:
         }
         self.mqtt_client.publish(discovery_topic, json.dumps(config), retain=True)
 
-    def publish_null_discovery(self):
-        unit_id = self.mqtt_client.unit_id
-        discovery_topic = f"homeassistant/binary_sensor/{unit_id}/{unit_id}_{self.sensor_index}/config"
-        self.mqtt_client.publish(discovery_topic, json.dumps({}), retain=True)
-
 
 def setup_motion_sensor(pin, retrigger_delay_ms, timer_n, client, name, device_info):
     motion = MQTTMotionSensor(
@@ -118,8 +107,6 @@ def setup_motion_sensor(pin, retrigger_delay_ms, timer_n, client, name, device_i
         mqtt_client=client,
         name=name
     )
-#     motion.set_topic("homeassistant/" + motion.topic)
-#     motion.set_name(name)
     print(device_info)
     motion.publish_discovery(device_info)
     motion.enable_interrupt()

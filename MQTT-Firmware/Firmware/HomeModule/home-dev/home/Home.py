@@ -6,12 +6,12 @@ from .WiFiManager import WiFiManager
 from .MQTTManager import MQTTManager
 from .UpdateManager import UpdateManager
 from .sensors.StatusLED import StatusLED
+from .sensors import MotionSensor, MQTTMotionSensor, DHT22Sensor, MQTTDHT22Sensor, DimmableLight, MQTTDimmableLight
 from .Timer import Timer
 from .Configs import DeviceConfig
 import config
 import ubinascii
 import urequests
-
 
 
 class HomeError(Exception):
@@ -24,8 +24,8 @@ def request_configs():
     if response.status_code == 200:
         data = response.json()
         return data
-    
-    
+
+
 def announce_ones_self():
     unit_id = ubinascii.hexlify(machine.unique_id()).decode()
     data = {
@@ -35,22 +35,23 @@ def announce_ones_self():
         "device_info": {
             "name": unit_id,
             "manufacturer": "ZRW",
-            "model":f"{sys.platform.upper()}-Circuit",
+            "model": f"{sys.platform.upper()}-Circuit",
             "identifiers": unit_id
-            }
         }
+    }
     response = urequests.post(f'{config.HOST}/api/home/devices/add', json=data)
     print("announcing...")
 
     print(response.status_code)
     if response.status_code == 200:
         data = response.json()
-        
+
         return data['device']
     return data
 
 
 class Home:
+    settings = None
     status_pin = False
     wifi_manager = None
     mqtt_manager = None
@@ -60,7 +61,7 @@ class Home:
     device_configs = None
     sensor_configs = None
     sensors = None
-    
+
     """
     Home class is a wrapper around the MQTT, WiFi and Update managers.
     It provides a simple interface to handle connections and updates.
@@ -84,23 +85,15 @@ class Home:
             self.status_pin = "LED"
         elif self._platform == 'esp32':
             self.status_pin = 2
-#         self.config = config
 
-#         self.unit_id = config.home_config["unit_id"]
         self.unit_id = ubinascii.hexlify(machine.unique_id()).decode()
         self.command_topic = f"command/#"
         self.log_topic = f"z-home/log/{self.unit_id}"
 
         self.timer = None
         self.use_ping = use_ping
-
+        self.sensors = []
         print("\nPlatform: ", self._platform, "\nUnit: ", self.unit_id)
-#         ssid = config.wifi_ssid
-#         password = config.wifi_password
-#         self.wifi_manager = WiFiManager(ssid, password)
-#         self.mqtt_manager = MQTTManager(unit_id=self.unit_id, **config.home_config["mqtt"])
-#         self.update_manager = UpdateManager(unit_id=self.unit_id, observer_func=self.log, **config.home_config["ftp"])
-#         self.display_name = config.home_config.get('display_name')
 
     def connect_wifi(self):
         ssid = config.wifi_ssid
@@ -108,18 +101,18 @@ class Home:
         self.wifi_manager = WiFiManager(ssid, password)
         print("\nconnecting WiFi")
         self.wifi_manager.connect_wifi()
-        
+
     def connect_mqtt(self):
         if self.settings.mqtt is None:
             raise HomeError("no mqtt connection details found")
         self.mqtt_manager = MQTTManager(unit_id=self.unit_id,
                                         server=self.settings.mqtt.host,
-                                        port=self.settings.mqtt.port ,
+                                        port=self.settings.mqtt.port,
                                         username=self.settings.mqtt.username,
                                         password=self.settings.mqtt.password)
         print("\nconnecting MQTT")
         self.mqtt_manager.connect_mqtt()
-    
+
     def connect_ftp(self):
         if self.settings.ftp is not None:
             self.update_manager = UpdateManager(unit_id=self.unit_id,
@@ -127,42 +120,88 @@ class Home:
                                                 host=self.settings.ftp.host,
                                                 user=self.settings.ftp.username,
                                                 password=self.settings.ftp.password)
-        
+
     def fetch_device_configs(self):
         if not self.wifi_manager.is_connected():
             raise HomeError("not connected to wifi")
-        
+
         info = request_configs()
         if not info:
             info = announce_ones_self()
         if not info:
-            return
+            raise HomeError("unable to locate configs")
+
         self.settings = DeviceConfig.parse_config(info)
         self.display_name = self.settings.name
         self.sensor_configs = self.settings.sensors
         self.device_info = self.settings.device_info
 
     def setup_sensors(self):
-        print(self.device_info)
-        
+
         if self.sensor_configs is not None:
             for i in self.sensor_configs:
                 sensor_type = i.get('sensor_type')
                 name = i.get('name')
                 sensor_config = i.get('sensor_config')
                 topics = sensor_config.get('topics') if sensor_config is not None else None
+                timer_n = self.sensor_configs.index(i)
                 if sensor_type == 'motion':
-                    print(topics)
-                    pass
+
+                    pin = sensor_config.get('pin')
+                    retrigger_delay_ms = sensor_config.get('retrigger_delay_ms')
+
+                    motion = MQTTMotionSensor(
+                        motion_sensor=MotionSensor(pin=pin,
+                                                   retrigger_delay_ms=retrigger_delay_ms,
+                                                   timer_n=timer_n),
+                        mqtt_client=self,
+                        name=name,
+                        state_topic=topics.get('state_topic'),
+                        discovery_topic=topics.get('discovery_topic')
+                    )
+
+                    motion.publish_discovery(self.device_info)
+                    motion.enable_interrupt()
+                    self.sensors.append(motion)
+
                 elif sensor_type == 'led':
-                    pass
+                    pin = sensor_config.get('pin')
+                    freq = sensor_config.get('freq')
+                    fade_time_ms = sensor_config.get('fade_time_ms')
+                    brightness_scale = sensor_config.get('brightness_scale')
+
+                    led = MQTTDimmableLight(light=DimmableLight(pin=pin,
+                                                                freq=freq,
+                                                                timer_n=timer_n,
+                                                                fade_time_ms=fade_time_ms,
+                                                                brightness_scale=brightness_scale),
+                                            mqtt_client=self,
+                                            name=name)
+
+                    led.publish_discovery(self.device_info)
+                    led.publish_brightness()
+                    led.publish_state()
+                    self.sensors.append(led)
                 elif sensor_type == 'weather':
-                    pass
+                    pin = sensor_config.get('pin')
+                    name_temp = sensor_config.get('name_temp')
+                    name_humidity = sensor_config.get('name_humidity')
+                    measurement_interval_ms = sensor_config.get('measurement_interval_ms')
+                    dht22 = MQTTDHT22Sensor(
+                        dht22_sensor=DHT22Sensor(pin=pin),
+                        mqtt_client=self,
+                        name_temp=name_temp,
+                        name_humidity=name_humidity,
+                        timer_n=timer_n
+                    )
+                    dht22.publish_discovery(self.device_info)
+                    dht22.enable_interrupt(measurement_interval_ms)
+                    self.sensors.append(dht22)
 
     def start_sequence(self):
         self.connect_wifi()
         self.fetch_device_configs()
-#         self.save_device_configs()
+        #         self.save_device_configs()
         self.connect_mqtt()
         self.log("Connected to Wifi and MQTT")
         self.connect_ftp()
@@ -172,7 +211,6 @@ class Home:
         self.set_callback(self.on_message)
         self.subscribe(self.command_topic)
         self.subscribe_sensors()
-        
 
     def status_led_off(self):
         light = StatusLED(self.status_pin)
@@ -222,14 +260,14 @@ class Home:
                 led.blink_light()
                 if led_on_after_connect:
                     led.on()
-    
+
     def subscribe_sensors(self):
         if self.sensors is not None:
             for s in self.sensors:
-                if hasattr(s, subscribe_to):
+                if hasattr(s, 'subscribe_to'):
                     for t in s.subscribe_to:
                         self.subscribe(t)
-                    
+
     def check_connections(self):
         """
         Checks the WiFi connection and reconnects if the connection is lost.
@@ -252,7 +290,7 @@ class Home:
     def on_message(self, topic, msg):
         if self.sensors is not None:
             for s in self.sensors:
-                if hasattr(s, on_message):
+                if hasattr(s, 'on_message'):
                     s.on_message(topic, msg)
         """
         Handles the MQTT messages.
@@ -356,22 +394,21 @@ class Home:
     def mqtt_ping(self):
         # print("ping!")
         self.mqtt_manager.ping()
-        
+
     def main(self):
-#         self.connect(led_on_after_connect=True)
-# 
-#         def on_message(topic, msg):
-#             self.on_message(topic, msg)
-# 
-#         self.set_callback(on_message)
-#         self.subscribe(self.command_topic)
+        #         self.connect(led_on_after_connect=True)
+        #
+        #         def on_message(topic, msg):
+        #             self.on_message(topic, msg)
+        #
+        #         self.set_callback(on_message)
+        #         self.subscribe(self.command_topic)
         self.start_sequence()
 
         while True:
             self.check_msg()
             utime.sleep_ms(100)
-            
-    
+
     def run(self):
         try:
             self.main()
