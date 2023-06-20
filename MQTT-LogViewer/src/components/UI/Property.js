@@ -2,11 +2,12 @@ import styled from "styled-components";
 import React from "react";
 
 const PropertyRow = styled.div`
-  width: 90%;
+  width: 95%;
   display: flex;
   justify-content: space-between;
-  padding-left: 2em;
-  padding-right: 2em;
+  padding-left: 1em;
+  padding-right: 1em;
+  //user-select: none;
 `
 const PropertyName = styled.div`
 
@@ -26,6 +27,7 @@ export const Property = ({name, value}) => {
 const PropStackContainer = styled.div`
   display: flex;
   flex-direction: column;
+  //user-select: none;
 `
 export const PropStack = ({label, children}) => {
     return (

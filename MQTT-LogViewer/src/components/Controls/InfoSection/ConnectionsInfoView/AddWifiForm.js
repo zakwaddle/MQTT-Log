@@ -1,35 +1,31 @@
 import React, {useState} from 'react';
-import useApi from "../../../hooks/useApi";
-import {FormContainer, FormInput, FormLabel} from "../../../styles/FormStyles";
+import useApi from "../../../../hooks/useApi";
+import styled from "styled-components";
+import {FormContainer, FormInput, FormLabel} from "../../../../styles/FormStyles";
 import {useDispatch} from "react-redux";
-import {globalStateActions} from "../../../store/globalStateSlice";
+import {globalStateActions} from "../../../../store/globalStateSlice";
 
-
-const AddFTPServerForm = ({handleCancel}) => {
-    const dispatch = useDispatch()
-    const {addFtpServer} = useApi()
-
-    const [hostAddress, setHostAddress] = useState('');
-    const [username, setUsername] = useState('');
+// const AddWifiForm = ({addNew, hideForm}) => {
+const AddWifiForm = ({handleCancel}) => {
+    const [ssid, setSSID] = useState('');
     const [password, setPassword] = useState('');
 
+    const {addWifiNetwork} = useApi()
     const clearFields = () => {
-        setHostAddress('');
-        setUsername('');
+        setSSID('');
         setPassword('');
     }
-
+    const dispatch = useDispatch()
     const handleSubmit = async (event) => {
         event.preventDefault();
 
-        addFtpServer(hostAddress, username, password)
+        addWifiNetwork(ssid, password)
             .then(data => {
                 console.log(data);
                 if (data && data.success) {
                     clearFields();
-                    dispatch(globalStateActions.updateFtpServer(data['ftp_server']))
+                    dispatch(globalStateActions.updateWifiNetwork(data['wifi_network']))
                     dispatch(globalStateActions.updateShowConnectionForm("None"))
-                    // hideForm()
                 }
             })
     };
@@ -37,12 +33,8 @@ const AddFTPServerForm = ({handleCancel}) => {
     return (
         <FormContainer onSubmit={handleSubmit}>
             <FormLabel>
-                Host Address
-                <FormInput type="text" value={hostAddress} onChange={e => setHostAddress(e.target.value)}/>
-            </FormLabel>
-            <FormLabel>
-                Username
-                <FormInput type="text" value={username} onChange={e => setUsername(e.target.value)}/>
+                SSID
+                <FormInput type="text" value={ssid} onChange={e => setSSID(e.target.value)}/>
             </FormLabel>
             <FormLabel>
                 Password
@@ -57,4 +49,4 @@ const AddFTPServerForm = ({handleCancel}) => {
     );
 };
 
-export default AddFTPServerForm;
+export default AddWifiForm;

@@ -1,12 +1,13 @@
-import React, {useEffect} from "react";
+import React from "react";
 import styled from "styled-components";
-import {useDispatch, useSelector} from "react-redux";
-import useApi from "../../hooks/useApi";
+// import {useDispatch, useSelector} from "react-redux";
+// import useApi from "../../hooks/useApi";
 import Menu from "./Menu/Menu";
-import useDeviceConfigs from "../../hooks/useDeviceConfigs";
-import {globalStateActions} from "../../store/globalStateSlice";
+import useConnections from "../../hooks/useConnections";
+// import {globalStateActions} from "../../store/globalStateSlice";
 import DetailSection from "./DetailsSection";
 import InfoSection from "./InfoSection";
+import useDevices from "../../hooks/useDevices";
 
 const ControlSectionBox = styled.div`
   width: 100%;
@@ -45,25 +46,9 @@ const DetailsWindow = styled.div`
   border-color: darkgrey
 `
 const ControlSection = () => {
-    useDeviceConfigs()
-    const dispatch = useDispatch();
-    const {fetchDevices} = useApi();
-    // const selectedDevice = useSelector(state => state['globalState']['selectedDevice'])
-    // const menuSelection = useSelector(state => state['globalState']['menuSelection'])
+    useConnections()
+    useDevices()
 
-    useEffect(() => {
-        fetchDevices().then(data => {
-            const newDevices = data.filter(device => device.display_name === null)
-            const devices = data.filter(device => device.display_name !== null)
-            dispatch(globalStateActions.updateDevices(devices));
-            dispatch(globalStateActions.updateNewDevices(newDevices));
-        });
-    }, []);
-
-    // const detailsVisible = menuSelection === 'Devices'
-    // if (!selectedDevice || !detailsVisible) {
-    //     return <DetailsWindow/>
-    // }
     return (
         <ControlSectionBox>
             <Menu/>

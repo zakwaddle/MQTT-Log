@@ -84,20 +84,12 @@ class MQTTMotionSensor:
         self.topic = f"homeassistant/binary_sensor/{self.mqtt_client.unit_id}/{self.name.lower().replace(' ', '_')}"
 
     def publish_discovery(self, device_info):
-        unit_id = self.mqtt_client.unit_id
-#         discovery_topic = f"homeassistant/{unit_id}/motion/config"
         discovery_topic = f"{self.topic}/config"
         print("Motion Sensor Discovery Topic: ", discovery_topic)
         print("Motion Sensor State Topic: ", self.state_topic)
         config = {
             "name": self.name,
             "device_class": "motion",
-#             "device": {
-#                 "name": "zAutomation Circuit",
-#                 "manufacturer": "Zak",
-#                 "model": "ESP32-Circuit",
-#                 "identifiers": f"{self.mqtt_client.unit_id}"
-#             },
             "device": device_info,
             "unique_id": f"{self.mqtt_client.unit_id}_{self.sensor_index}",
             "payload_off": "0",

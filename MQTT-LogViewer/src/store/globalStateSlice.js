@@ -12,8 +12,11 @@ const initialState = {
     mqttBroker: null,
     shouldScroll: true,
     menuSelection: 'Devices',
+    detailsSectionView: 'main',
     selectedDevice: null,
-    showConnectionForm: 'None'
+    selectedSensor: null,
+    showConnectionForm: 'None',
+    shouldUpdateDevices: true
 
 }
 const globalStateSlice = createSlice({
@@ -69,6 +72,15 @@ const globalStateSlice = createSlice({
         },
         updateSelectedDevice(state, action) {
             state.selectedDevice = action.payload
+        },
+        updateSelectedSensor(state, action) {
+            state.selectedSensor = action.payload
+        },
+        updateDetailsSectionView(state, action) {
+            state.detailsSectionView = action.payload
+        },
+        updateShouldUpdateDevices(state, action) {
+            state.shouldUpdateDevices = action.payload
         },
     }
 })

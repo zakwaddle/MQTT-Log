@@ -4,7 +4,7 @@ import useApi from "./useApi";
 import {globalStateActions} from "../store/globalStateSlice";
 
 
-const useDeviceConfigs = () => {
+const useConnections = () => {
     const dispatch = useDispatch()
 
     const {
@@ -26,4 +26,4 @@ const useDeviceConfigs = () => {
     }, [])
 }
 
-export default useDeviceConfigs;
+export default useConnections;

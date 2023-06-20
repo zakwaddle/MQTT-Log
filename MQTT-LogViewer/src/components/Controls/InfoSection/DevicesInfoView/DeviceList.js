@@ -1,9 +1,9 @@
 import React, {useState} from "react";
 import styled from "styled-components";
-import useApi from "../../../hooks/useApi";
+import useApi from "../../../../hooks/useApi";
 import {useDispatch, useSelector} from "react-redux";
-import {globalStateActions} from "../../../store/globalStateSlice";
-import {PropStack} from "../../UI/Property";
+import {globalStateActions} from "../../../../store/globalStateSlice";
+import {PropStack} from "../../../UI/Property";
 
 const DeviceSectionContainer = styled.div`
   width: 100%;
@@ -30,6 +30,7 @@ const DeviceContainer = styled.div`
   padding: .25em;
   margin: .25em;
   align-items: center;
+  cursor: pointer;
 `
 const Button = styled.button`
   font-family: monospace;

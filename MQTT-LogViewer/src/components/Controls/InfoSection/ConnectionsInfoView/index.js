@@ -2,9 +2,9 @@ import {useDispatch, useSelector} from "react-redux";
 import {globalStateActions} from "../../../../store/globalStateSlice";
 import React from "react";
 import {Button, CenteredRow, Section, SectionTitle} from "../../../../styles/SectionStyles";
-import AddMQTTBrokerForm from "../../Forms/AddMQTTBrokerForm";
-import AddWifiForm from "../../Forms/AddWifiForm";
-import AddFTPServerForm from "../../Forms/AddFTPServerForm";
+import AddMQTTBrokerForm from "./AddMQTTBrokerForm";
+import AddWifiForm from "./AddWifiForm";
+import AddFTPServerForm from "./AddFTPServerForm";
 import {Property} from "../../../UI/Property";
 
 const WifiSection = ({wifi}) => {
