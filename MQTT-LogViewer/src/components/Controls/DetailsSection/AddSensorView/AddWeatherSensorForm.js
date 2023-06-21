@@ -28,6 +28,8 @@ const AddWeatherSensorForm = ({deviceConfigId, deviceName, handleCancel, updateD
             {
                 pin: pin,
                 measurement_interval_ms: measurementInterval,
+                name_temp: temperatureName,
+                name_humidity: humidityName,
                 topics: {
                     temperature_topic: temperatureTopic,
                     temperature_discovery: `${temperatureTopic}/config`,
