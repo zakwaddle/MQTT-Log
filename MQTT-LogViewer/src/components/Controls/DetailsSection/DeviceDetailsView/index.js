@@ -5,6 +5,7 @@ import {Button} from "../../../../styles/SectionStyles";
 import {PropStack} from "../../../UI/Property";
 import {globalStateActions} from "../../../../store/globalStateSlice";
 import SensorCard from "./SensorCard";
+import useApi from "../../../../hooks/useApi";
 
 const Row = styled.div`
   width: available;
@@ -67,9 +68,13 @@ const DeviceDetailsView = () => {
     const dispatch = useDispatch()
 
     const addSensorView = () => dispatch(globalStateActions.updateDetailsSectionView('addSensor'))
-
+    const {restartDevice} = useApi()
+    const handleRestartClick = () => {
+        restartDevice(config['device_id']).then(data => console.log(data))
+    }
     return (
         <Wrapper>
+            <div><Button onClick={handleRestartClick}>Restart Device</Button></div>
             <SectionContainer>
                 <h4>Device Details:</h4>
                 <Row>
