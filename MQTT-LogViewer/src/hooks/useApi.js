@@ -54,6 +54,16 @@ const useApi = () => {
         setLoading(false);
         return data;
     };
+    const restartDevice = async (deviceId) => {
+        setLoading(true);
+        const response = await fetch(`${baseUrl}/devices/${deviceId}/restart`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        });
+        const data = await response.json();
+        setLoading(false);
+        return data;
+    };
 
     const deleteDevice = async (id) => {
         setLoading(true);
@@ -309,6 +319,7 @@ const useApi = () => {
         updateSensorConfig,
         deleteSensor,
         checkIn,
+        restartDevice,
         fetchWifiNetworks,
         addWifiNetwork,
         updateWifiNetwork,
