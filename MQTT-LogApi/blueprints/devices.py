@@ -3,6 +3,8 @@ from database import (get_devices, add_device, update_display_name, delete_devic
                       update_device_config, delete_device_config, add_device_config, get_device_sensors,
                       get_wifi_network, get_mqtt_broker, get_ftp_server)
 from flask_sse import sse
+from mqtt import send_mqtt_message
+import json
 
 device_blueprint = Blueprint('device_blueprint', __name__)
 
@@ -33,7 +35,6 @@ def add_new_device():
     new_device = add_device(device_data)
     add_device_config(new_device['id'], **create_default_config())
     device = get_device(new_device['id'])
-    # data = device.to_dict() if device is not None else {}
     sse.publish({"message": "New device added", "type": "device", "device": device})
     return jsonify(success=True, device=device)
 
@@ -58,6 +59,12 @@ def update_device_display_name(device_id):
 @device_blueprint.route('/<string:device_id>', methods=['DELETE'])
 def remove_device(device_id):
     delete_device(device_id)
+    return jsonify(success=True)
+
+
+@device_blueprint.route('/<string:device_id>/restart', methods=['POST'])
+def restart_device(device_id):
+    send_mqtt_message(f"command/{device_id}", json.dumps({'command': 'restart'}))
     return jsonify(success=True)
 
 
