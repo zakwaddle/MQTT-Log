@@ -6,12 +6,22 @@ from .WiFiManager import WiFiManager
 from .MQTTManager import MQTTManager
 from .UpdateManager import UpdateManager
 from .sensors.StatusLED import StatusLED
-from .sensors import MotionSensor, MQTTMotionSensor, DHT22Sensor, MQTTDHT22Sensor, DimmableLight, MQTTDimmableLight
+from .sensors import HomeMotionSensor, HomeWeatherSensor, HomeLEDDimmer
 from .Timer import Timer
 from .Configs import DeviceConfig
 import config
 import ubinascii
 import urequests
+
+
+def save_data(data):
+    with open('/home/saved-data.json', 'w') as f:
+        json.dump(data, f)
+
+
+def load_data():
+    with open('/home/saved-data.json', 'r') as f:
+        return json.load(f)
 
 
 class HomeError(Exception):
@@ -21,8 +31,11 @@ class HomeError(Exception):
 def request_configs():
     unit_id = ubinascii.hexlify(machine.unique_id()).decode()
     response = urequests.get(f'{config.HOST}/api/home/devices/{unit_id}')
+    print(f'requesting settings from: {config.HOST}')
     if response.status_code == 200:
+        print(f'received settings')
         data = response.json()
+        save_data(data)
         return data
 
 
@@ -33,19 +46,18 @@ def announce_ones_self():
         "platform": sys.platform,
         "display_name": config.NAME,
         "device_info": {
-            "name": unit_id,
+            "name": config.NAME,
             "manufacturer": "ZRW",
             "model": f"{sys.platform.upper()}-Circuit",
             "identifiers": unit_id
         }
     }
     response = urequests.post(f'{config.HOST}/api/home/devices/add', json=data)
-    print("announcing...")
+    print("announcing device...")
 
-    print(response.status_code)
     if response.status_code == 200:
         data = response.json()
-
+        print("device added")
         return data['device']
     return data
 
@@ -93,7 +105,7 @@ class Home:
         self.timer = None
         self.use_ping = use_ping
         self.sensors = []
-        print("\nPlatform: ", self._platform, "\nUnit: ", self.unit_id)
+        print("\nPlatform: ", self._platform, "\nName: ", config.NAME, "\nUnit: ", self.unit_id)
 
     def connect_wifi(self):
         ssid = config.wifi_ssid
@@ -129,6 +141,14 @@ class Home:
         if not info:
             info = announce_ones_self()
         if not info:
+            try:
+                info = load_data()
+                print('loaded data from saved file')
+            except json.JSONDecodeError:
+                info = False
+            except OSError:
+                info = False
+        if not info:
             raise HomeError("unable to locate configs")
 
         self.settings = DeviceConfig.parse_config(info)
@@ -144,73 +164,42 @@ class Home:
                 name = i.get('name')
                 sensor_config = i.get('sensor_config')
                 topics = sensor_config.get('topics') if sensor_config is not None else None
-                timer_n = self.sensor_configs.index(i)
+                sensor_index = self.sensor_configs.index(i) + 1
                 if sensor_type == 'motion':
-
-                    pin = sensor_config.get('pin')
-                    retrigger_delay_ms = sensor_config.get('retrigger_delay_ms')
-
-                    motion = MQTTMotionSensor(
-                        motion_sensor=MotionSensor(pin=pin,
-                                                   retrigger_delay_ms=retrigger_delay_ms,
-                                                   timer_n=timer_n),
-                        mqtt_client=self,
-                        name=name,
-                        state_topic=topics.get('state_topic'),
-                        discovery_topic=topics.get('discovery_topic')
-                    )
-
+                    motion = HomeMotionSensor(self, name, sensor_config, topics, sensor_index)
                     motion.publish_discovery(self.device_info)
                     motion.enable_interrupt()
                     self.sensors.append(motion)
 
                 elif sensor_type == 'led':
-                    pin = sensor_config.get('pin')
-                    freq = sensor_config.get('freq')
-                    fade_time_ms = sensor_config.get('fade_time_ms')
-                    brightness_scale = sensor_config.get('brightness_scale')
-
-                    led = MQTTDimmableLight(light=DimmableLight(pin=pin,
-                                                                freq=freq,
-                                                                timer_n=timer_n,
-                                                                fade_time_ms=fade_time_ms,
-                                                                brightness_scale=brightness_scale),
-                                            mqtt_client=self,
-                                            name=name)
-
+                    led = HomeLEDDimmer(self, name, sensor_config, topics, sensor_index)
                     led.publish_discovery(self.device_info)
                     led.publish_brightness()
                     led.publish_state()
                     self.sensors.append(led)
+
                 elif sensor_type == 'weather':
-                    pin = sensor_config.get('pin')
-                    name_temp = sensor_config.get('name_temp')
-                    name_humidity = sensor_config.get('name_humidity')
                     measurement_interval_ms = sensor_config.get('measurement_interval_ms')
-                    dht22 = MQTTDHT22Sensor(
-                        dht22_sensor=DHT22Sensor(pin=pin),
-                        mqtt_client=self,
-                        name_temp=name_temp,
-                        name_humidity=name_humidity,
-                        timer_n=timer_n
-                    )
-                    dht22.publish_discovery(self.device_info)
-                    dht22.enable_interrupt(measurement_interval_ms)
-                    self.sensors.append(dht22)
+                    weather = HomeWeatherSensor(self, name, sensor_config, topics, sensor_index)
+                    weather.enable_interrupt(measurement_interval_ms)
+                    weather.publish_discovery(self.device_info)
+                    self.sensors.append(weather)
+
+    def setup_subscriptions(self):
+        self.set_callback(self.on_message)
+        self.subscribe(self.command_topic)
+        self.subscribe_sensors()
 
     def start_sequence(self):
         self.connect_wifi()
         self.fetch_device_configs()
-        #         self.save_device_configs()
         self.connect_mqtt()
         self.log("Connected to Wifi and MQTT")
         self.connect_ftp()
         self.set_connection_check_timer()
         self.setup_sensors()
-
-        self.set_callback(self.on_message)
-        self.subscribe(self.command_topic)
-        self.subscribe_sensors()
+        print(self.sensors)
+        self.setup_subscriptions()
 
     def status_led_off(self):
         light = StatusLED(self.status_pin)
@@ -279,19 +268,13 @@ class Home:
             self.log("Reconnected Wifi and MQTT")
         if not self.mqtt_manager.is_connected:
             self.mqtt_manager.connect_mqtt()
-            self.set_callback(self.on_message)
-            self.subscribe(self.command_topic)
-            self.subscribe_sensors()
+            self.setup_subscriptions()
             self.log("Reconnected MQTT")
         else:
             if self.use_ping:
                 self.mqtt_ping()
 
     def on_message(self, topic, msg):
-        if self.sensors is not None:
-            for s in self.sensors:
-                if hasattr(s, 'on_message'):
-                    s.on_message(topic, msg)
         """
         Handles the MQTT messages.
 
@@ -299,8 +282,13 @@ class Home:
         :param topic: The topic of the message.
         :param msg: The received message.
         """
+        if self.sensors is not None:
+            for s in self.sensors:
+                if hasattr(s, 'on_message'):
+                    s.on_message(topic, msg)
+
         t = topic.decode('utf-8')
-        if t == f'command/{self.unit_id}' or t == 'command/all-units':
+        if t == f'command/{self.unit_id}' or t == 'command/all-units' or t == f'command/{self.display_name}':
 
             try:
                 msg = msg.decode('utf-8')
@@ -392,19 +380,12 @@ class Home:
         self.mqtt_manager.check_msg()
 
     def mqtt_ping(self):
-        # print("ping!")
         self.mqtt_manager.ping()
 
     def main(self):
-        #         self.connect(led_on_after_connect=True)
-        #
-        #         def on_message(topic, msg):
-        #             self.on_message(topic, msg)
-        #
-        #         self.set_callback(on_message)
-        #         self.subscribe(self.command_topic)
         self.start_sequence()
-
+        print("------listening for messages------")
+        self.log("listening for messages")
         while True:
             self.check_msg()
             utime.sleep_ms(100)
