@@ -92,6 +92,18 @@ def get_device_config(device_id):
     return data
 
 
+def update_device_settings(device_id, settings):
+    with Session() as session:
+        try:
+            config = session.query(DeviceConfig).filter(DeviceConfig.device_id == device_id).one()
+            config.device_settings = settings
+            session.commit()
+            data = config.to_dict()
+        except NoResultFound:
+            data = {}
+    return data
+
+
 def delete_device_config(device_id):
     with Session() as session:
         session.query(DeviceConfig).filter(DeviceConfig.device_id == device_id).delete()

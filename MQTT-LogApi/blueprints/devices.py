@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from database import (get_devices, add_device, update_display_name, delete_device, get_device_config, get_device,
                       update_device_config, delete_device_config, add_device_config, get_device_sensors,
-                      get_wifi_network, get_mqtt_broker, get_ftp_server)
+                      get_wifi_network, get_mqtt_broker, get_ftp_server, update_device_settings)
 from flask_sse import sse
 from mqtt import send_mqtt_message
 import json
@@ -68,6 +68,14 @@ def restart_device(device_id):
     return jsonify(success=True)
 
 
+@device_blueprint.route('/<string:device_id>/send-message', methods=['POST'])
+def send_message(device_id):
+    message = request.json
+    if isinstance(message, dict):
+        send_mqtt_message(f"command/{device_id}", json.dumps(message))
+        return jsonify(success=True)
+    return jsonify(success=False)
+
 @device_blueprint.route('/<string:device_id>/config')
 def get_config(device_id):
     config = get_device_config(device_id)
@@ -85,6 +93,13 @@ def add_config(device_id):
 def update_config(device_id):
     new_config = request.json
     update_device_config(device_id, new_config)
+    return jsonify(success=True, config=new_config)
+
+
+@device_blueprint.route('/<string:device_id>/settings', methods=['PUT'])
+def update_settings(device_id):
+    new_settings = request.json
+    new_config = update_device_settings(device_id, new_settings)
     return jsonify(success=True, config=new_config)
 
 

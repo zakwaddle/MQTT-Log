@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, JSON
 from sqlalchemy.orm import relationship
 from .ModelBase import ModelBase
 
@@ -8,7 +8,7 @@ class DeviceConfig(ModelBase):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     device_id = Column(String, ForeignKey('home-devices.id'), unique=True)  # one-to-one relationship
-    # config = Column(JSON)
+    device_settings = Column(JSON)
     wifi_network_id = Column(Integer, ForeignKey('wifi-networks.id'))
     ftp_server_id = Column(Integer, ForeignKey('ftp-servers.id'))
     mqtt_broker_id = Column(Integer, ForeignKey('mqtt-brokers.id'))
@@ -27,7 +27,7 @@ class DeviceConfig(ModelBase):
         return {
             "id": self.id,
             "device_id": self.device_id,
-            # "config": self.config,
+            "device_settings": self.device_settings,
             "wifi_network": self.wifi_network.to_dict() if self.wifi_network else None,
             "ftp_server": self.ftp_server.to_dict() if self.ftp_server else None,
             "mqtt_broker": self.mqtt_broker.to_dict() if self.mqtt_broker else None,

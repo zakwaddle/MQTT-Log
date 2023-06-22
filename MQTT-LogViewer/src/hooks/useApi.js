@@ -65,6 +65,18 @@ const useApi = () => {
         return data;
     };
 
+    const sendMessage = async (deviceId, message) => {
+        setLoading(true);
+        const response = await fetch(`${baseUrl}/devices/${deviceId}/send-message`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(message)
+        });
+        const data = await response.json();
+        setLoading(false);
+        return data;
+    };
+
     const deleteDevice = async (id) => {
         setLoading(true);
         const response = await fetch(`${baseUrl}/devices/${id}`, {
@@ -81,6 +93,18 @@ const useApi = () => {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({display_name: newName})
+        });
+        const data = await response.json();
+        setLoading(false);
+        return data;
+    };
+
+    const updateDeviceSettings = async (id, newSettings) => {
+        setLoading(true);
+        const response = await fetch(`${baseUrl}/devices/${id}/settings`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(newSettings)
         });
         const data = await response.json();
         setLoading(false);
@@ -311,6 +335,7 @@ const useApi = () => {
         fetchDevices,
         addDevice,
         updateDeviceName,
+        updateDeviceSettings,
         deleteDevice,
         fetchDeviceConfig,
         updateDeviceConfig,
@@ -332,6 +357,7 @@ const useApi = () => {
         addMqttBroker,
         updateMqttBroker,
         deleteMqttBroker,
+        sendMessage,
         loading
     };
 };
