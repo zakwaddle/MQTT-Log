@@ -4,7 +4,7 @@ const GlobalStyle = createGlobalStyle`
   html, body {
     margin: 0;
     padding: 0;
-    //font-size: 18px;
+    overflow-x: hidden;
 
   }
   
@@ -14,11 +14,13 @@ const GlobalStyle = createGlobalStyle`
   }
   
   body {
-    font-size: 12px;  
+    font-size: 12px;
+    background-color: whitesmoke;
     @media (max-width: 429px) {
-      font-size: 16px;
+      font-size: 14px;
     }
   }
+
 `
 
 export default GlobalStyle;

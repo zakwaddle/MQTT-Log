@@ -266,3 +266,5 @@ google_token.json
 !/src/Model/ElectronApi.spec
 !/MQTT-LogViewer/build/
 /MQTT-LogApi/log_entries.db
+MQTT-LogApi/log_entries.db
+MQTT-LogApi/log_entries.db

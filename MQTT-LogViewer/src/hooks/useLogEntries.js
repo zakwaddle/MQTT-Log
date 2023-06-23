@@ -1,44 +1,16 @@
-import React from "react";
+import React, {useEffect} from "react";
+import {useDispatch} from "react-redux";
+import {globalStateActions} from "../store/globalStateSlice";
+import useApi from "./useApi";
 
-export default function useLogEntries(base_url){
-    const [entries, setEntries] = React.useState([]);
-    const [shouldScroll, setShouldScroll] = React.useState(true)
+export default function useLogEntries(){
 
-    const handleDelete = (id) => {
-        setShouldScroll(false)
-        setEntries(entries.filter(entry => entry.id !== id))
-    }
+    const dispatch = useDispatch();
+    const {fetchLogs} = useApi();
 
-
-    React.useEffect(() => {
-        const url = `${base_url}/logs`
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                setEntries(data)
-                console.log(`API: ${url}`)
-                console.log(data)
-            })
-            .catch(error => console.error(error));
+    useEffect(() => {
+        fetchLogs().then(data => {
+            dispatch(globalStateActions.updateDeviceLogs(data))
+        })
     }, []);
-
-    React.useEffect(() => {
-        const url = `${base_url}/stream`
-        console.log(`SSE Stream: ${url}`)
-        const eventSource = new EventSource(url);
-
-        eventSource.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            // console.log(data);
-            data.log && setShouldScroll(true)
-            data.log && setEntries(oldEntries => [...oldEntries, data.log]);
-            // const shouldAutoScroll = (Date.now() - lastScroll) >= 15000;
-        };
-
-        return () => {
-            eventSource.close();
-        };
-    }, []);
-
-    return { entries, handleDelete, shouldScroll };
-}
+};
