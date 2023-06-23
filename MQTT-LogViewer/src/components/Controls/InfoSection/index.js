@@ -1,6 +1,6 @@
 import React from "react";
 // import styled from 'styled-components';
-import {Devices} from "./DevicesInfoView/Devices";
+import {DeviceList} from "./DevicesInfoView/DeviceList";
 import ConnectionSection from "./ConnectionsInfoView";
 import {useSelector} from "react-redux";
 
@@ -11,7 +11,7 @@ export default function InfoWindow (){
     const menuSelection = useSelector(state => state['globalState']['menuSelection'])
 
     const infoSection = {
-        "Devices": <Devices/>,
+        "Devices": <DeviceList/>,
         "Connections": <ConnectionSection/>
     }
 
