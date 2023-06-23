@@ -9,7 +9,8 @@ class DimmableLight:
         if self._platform not in ['rp2', 'esp32']:
             raise ValueError(f"Unsupported platform: {self._platform}")
 
-        self.pwm = machine.Pin(pin)
+        self.pin = pin
+        self.pwm = machine.Pin(self.pin)
         self.freq = freq
         self.timer_n = timer_n
         self.fade_time_ms = fade_time_ms
@@ -85,16 +86,23 @@ class DimmableLight:
 
 
 class MQTTDimmableLight:
-    def __init__(self, mqtt_client, light: DimmableLight, name=None):
+    def __init__(self, mqtt_client, light: DimmableLight,
+                 name=None, state_topic=None, command_topic=None,
+                 brightness_state_topic=None, brightness_command_topic=None, discovery_topic=None):
         self.mqtt_client = mqtt_client
         self.light = light
         self.name = f"LED-{self.light.timer_n}" if name is None else name
-
-        self.topic = f"homeassistant/light/{self.mqtt_client.unit_id}/{self.name.lower().replace(' ', '_')}"
-        self.state_topic = f"{self.topic}/state"
-        self.command_topic = f"{self.topic}/set"
-        self.brightness_state_topic = f"{self.topic}/dim"
-        self.brightness_command_topic = f"{self.topic}/dim/set"
+        self.state_topic = state_topic
+        self.command_topic = command_topic
+        self.brightness_state_topic = brightness_state_topic
+        self.brightness_command_topic = brightness_command_topic
+        self.discovery_topic = discovery_topic
+        # self.topic = f"homeassistant/light/{self.mqtt_client.unit_id}/{self.name.lower().replace(' ', '_')}"
+        # self.state_topic = f"{self.topic}/state"
+        # self.command_topic = f"{self.topic}/set"
+        # self.brightness_state_topic = f"{self.topic}/dim"
+        # self.brightness_command_topic = f"{self.topic}/dim/set"
+        self.subscribe_to = [self.command_topic, self.brightness_command_topic]
 
     def publish_state(self):
         self.mqtt_client.publish(self.state_topic, str(self.light.state))
@@ -108,8 +116,8 @@ class MQTTDimmableLight:
         self.name = name
 
     def publish_discovery(self, device_info):
-        discovery_topic = f"{self.topic}/config"
-        print(f"{self.name} Discovery Topic: ", discovery_topic)
+        # discovery_topic = f"{self.topic}/config"
+        print(f"{self.name} Discovery Topic: ", self.discovery_topic)
         print(f"{self.name} State Topic: ", self.state_topic)
         config = {
             "name": self.name,
@@ -122,10 +130,10 @@ class MQTTDimmableLight:
             "payload_off": "OFF",
             "optimistic": False,
             "device": device_info,
-            "unique_id": f"{self.mqtt_client.unit_id}-{self.light.timer_n}",
+            "unique_id": f"{self.mqtt_client.display_name}-{self.name}",
 
         }
-        self.mqtt_client.publish(discovery_topic, json.dumps(config), retain=True)
+        self.mqtt_client.publish(self.discovery_topic, json.dumps(config), retain=True)
 
     def on_message(self, topic, msg):
         topic = topic.decode('utf-8')
@@ -153,19 +161,26 @@ class MQTTDimmableLight:
                 self.publish_state()
 
 
-def setup_led(pin, freq, timer_n, fade_time_ms, brightness_scale, client, name, device_info):
-    dim_light = DimmableLight(pin=pin,
-                              freq=freq,
-                              timer_n=timer_n,
-                              fade_time_ms=fade_time_ms,
-                              brightness_scale=brightness_scale)
+class HomeLEDDimmer(MQTTDimmableLight):
 
-    led = MQTTDimmableLight(light=dim_light,
-                            mqtt_client=client,
-                            name=name)
+    def __init__(self, home_client, name, sensor_config, topics, sensor_index):
+        self.pin = sensor_config.get('pin')
+        freq = sensor_config.get('freq')
+        fade_time_ms = sensor_config.get('fade_time_ms')
+        brightness_scale = sensor_config.get('brightness_scale')
 
-    led.publish_discovery(device_info)
-    led.publish_brightness()
-    led.publish_state()
+        super().__init__(mqtt_client=home_client,
+                         name=name,
+                         state_topic=topics.get('state_topic'),
+                         command_topic=topics.get('command_topic'),
+                         brightness_state_topic=topics.get('brightness_state_topic'),
+                         brightness_command_topic=topics.get('brightness_command_topic'),
+                         discovery_topic=topics.get('discovery_topic'),
+                         light=DimmableLight(pin=self.pin,
+                                             freq=freq,
+                                             timer_n=sensor_index,
+                                             fade_time_ms=fade_time_ms,
+                                             brightness_scale=brightness_scale))
 
-    return led
+    def __repr__(self):
+        return f"<HomeLEDDimmer| {self.name} | pin:{self.pin}>"

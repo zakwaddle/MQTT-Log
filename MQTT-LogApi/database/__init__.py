@@ -48,7 +48,7 @@ def get_device(device_id):
     with Session() as session:
         try:
             device = session.query(HomeDevice).filter(HomeDevice.id == device_id).one()
-            data = device
+            data = device.to_dict()
         except NoResultFound:
             data = None
     return data
@@ -59,8 +59,8 @@ def update_display_name(device_id, new_name):
         try:
             device = session.query(HomeDevice).filter(HomeDevice.id == device_id).one()
             device.display_name = new_name
-            data = device
             session.commit()
+            data = device.to_dict()
         except NoResultFound:
             data = None
     return data
@@ -86,6 +86,18 @@ def get_device_config(device_id):
     with Session() as session:
         try:
             config = session.query(DeviceConfig).filter(DeviceConfig.device_id == device_id).one()
+            data = config.to_dict()
+        except NoResultFound:
+            data = {}
+    return data
+
+
+def update_device_settings(device_id, settings):
+    with Session() as session:
+        try:
+            config = session.query(DeviceConfig).filter(DeviceConfig.device_id == device_id).one()
+            config.device_settings = settings
+            session.commit()
             data = config.to_dict()
         except NoResultFound:
             data = {}

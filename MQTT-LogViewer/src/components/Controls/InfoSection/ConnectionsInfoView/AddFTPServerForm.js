@@ -1,35 +1,35 @@
 import React, {useState} from 'react';
-import useApi from "../../hooks/useApi";
-import {FormContainer, FormInput, FormLabel} from "../../styles/FormStyles";
+import useApi from "../../../../hooks/useApi";
+import {FormContainer, FormInput, FormLabel} from "../../../../styles/FormStyles";
+import {useDispatch} from "react-redux";
+import {globalStateActions} from "../../../../store/globalStateSlice";
 
 
+const AddFTPServerForm = ({handleCancel}) => {
+    const dispatch = useDispatch()
+    const {addFtpServer} = useApi()
 
-const AddMQTTBrokerForm = ({hideForm}) => {
     const [hostAddress, setHostAddress] = useState('');
-    const [port, setPort] = useState(1883);
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [isDefault, setIsDefault] = useState(false);
 
-
-    const {addMqttBroker} = useApi()
     const clearFields = () => {
         setHostAddress('');
-        setPort(null);
         setUsername('');
         setPassword('');
-        setIsDefault(false)
     }
 
     const handleSubmit = async (event) => {
         event.preventDefault();
 
-        addMqttBroker(hostAddress, port, username, password)
+        addFtpServer(hostAddress, username, password)
             .then(data => {
                 console.log(data);
                 if (data && data.success) {
                     clearFields();
-                    hideForm && hideForm()
+                    dispatch(globalStateActions.updateFtpServer(data['ftp_server']))
+                    dispatch(globalStateActions.updateShowConnectionForm("None"))
+                    // hideForm()
                 }
             })
     };
@@ -41,10 +41,6 @@ const AddMQTTBrokerForm = ({hideForm}) => {
                 <FormInput type="text" value={hostAddress} onChange={e => setHostAddress(e.target.value)}/>
             </FormLabel>
             <FormLabel>
-                Port
-                <FormInput type="number" value={port} onChange={e => setPort(Number(e.target.value))}/>
-            </FormLabel>
-            <FormLabel>
                 Username
                 <FormInput type="text" value={username} onChange={e => setUsername(e.target.value)}/>
             </FormLabel>
@@ -54,10 +50,11 @@ const AddMQTTBrokerForm = ({hideForm}) => {
             </FormLabel>
 
             <div>
+                <button onClick={handleCancel && handleCancel}>Cancel</button>
                 <button type="submit">Save</button>
             </div>
         </FormContainer>
     );
 };
 
-export default AddMQTTBrokerForm;
+export default AddFTPServerForm;

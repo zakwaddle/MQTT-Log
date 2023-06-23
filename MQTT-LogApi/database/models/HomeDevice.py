@@ -23,5 +23,6 @@ class HomeDevice(ModelBase):
             "id": self.id,
             "platform": self.platform,
             "display_name": self.display_name,
+            "device_info": self.device_info,
             "config": self.config.to_dict() if self.config else None
         }

@@ -10,7 +10,13 @@ const initialState = {
     wifiNetwork: null,
     ftpServer: null,
     mqttBroker: null,
-    shouldScroll: true
+    shouldScroll: true,
+    menuSelection: 'Logs',
+    detailsSectionView: 'main',
+    selectedDevice: null,
+    selectedSensor: null,
+    showConnectionForm: 'None',
+    shouldUpdateDevices: true
 
 }
 const globalStateSlice = createSlice({
@@ -57,6 +63,24 @@ const globalStateSlice = createSlice({
         },
         updateShouldScroll(state, action) {
             state.shouldScroll = action.payload
+        },
+        updateMenuSelection(state, action) {
+            state.menuSelection = action.payload
+        },
+        updateShowConnectionForm(state, action) {
+            state.showConnectionForm = action.payload
+        },
+        updateSelectedDevice(state, action) {
+            state.selectedDevice = action.payload
+        },
+        updateSelectedSensor(state, action) {
+            state.selectedSensor = action.payload
+        },
+        updateDetailsSectionView(state, action) {
+            state.detailsSectionView = action.payload
+        },
+        updateShouldUpdateDevices(state, action) {
+            state.shouldUpdateDevices = action.payload
         },
     }
 })
