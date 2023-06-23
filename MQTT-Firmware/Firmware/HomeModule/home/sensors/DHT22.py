@@ -22,19 +22,26 @@ class DHT22Sensor:
 
 
 class MQTTDHT22Sensor:
-    def __init__(self, dht22_sensor: DHT22Sensor, mqtt_client, name_temp=None, name_humidity=None, timer_n=1):
+    def __init__(self, dht22_sensor: DHT22Sensor, mqtt_client, name_temp=None, name_humidity=None, timer_n=1,
+                 temp_topic=None,
+                 temp_discovery_topic=None,
+                 humidity_topic=None,
+                 humidity_discovery_topic=None):
         self.dht22_sensor = dht22_sensor
         self.mqtt_client = mqtt_client
         self.sensor_index = timer_n
 
-        self.name_temp = f"temp-{self.sensor_index}" if name_temp is None else name_temp
-        self.name_humidity = f"humidity-{self.sensor_index}" if name_humidity is None else name_humidity
-
-        self.base_topic = f"homeassistant/sensor/{self.mqtt_client.unit_id}"
-        self.temp_topic = f"{self.base_topic}/{self.name_temp.lower().replace(' ', '_')}"
-        self.temp_discovery_topic = f"{self.temp_topic}/config"
-        self.humidity_topic = f"{self.base_topic}/{self.name_humidity.lower().replace(' ', '_')}"
-        self.humidity_discovery_topic = f"{self.humidity_topic}/config"
+        self.name_temp = name_temp
+        self.name_humidity = name_humidity
+        self.temp_topic = temp_topic
+        self.temp_discovery_topic = temp_discovery_topic
+        self.humidity_topic = humidity_topic
+        self.humidity_discovery_topic = humidity_discovery_topic
+        # self.base_topic = f"homeassistant/sensor/{self.mqtt_client.unit_id}"
+        # self.temp_topic = f"{self.base_topic}/{self.name_temp.lower().replace(' ', '_')}"
+        # self.temp_discovery_topic = f"{self.temp_topic}/config"
+        # self.humidity_topic = f"{self.base_topic}/{self.name_humidity.lower().replace(' ', '_')}"
+        # self.humidity_discovery_topic = f"{self.humidity_topic}/config"
 
         self.timer = None
         self.measurement_errors = 0
@@ -108,15 +115,21 @@ class MQTTDHT22Sensor:
         self.mqtt_client.publish(self.humidity_discovery_topic, json.dumps(config_humidity), retain=True)
 
 
-def setup_dht22_sensor(pin, timer_n, measurement_interval_ms, client, name_temp, name_humidity, device_info):
-    sensor = DHT22Sensor(pin=pin)
-    dht22 = MQTTDHT22Sensor(
-        dht22_sensor=sensor,
-        mqtt_client=client,
-        name_temp=name_temp,
-        name_humidity=name_humidity,
-        timer_n=timer_n
-    )
-    dht22.publish_discovery(device_info)
-    dht22.enable_interrupt(measurement_interval_ms)
-    return dht22
+class HomeWeatherSensor(MQTTDHT22Sensor):
+    def __init__(self, home_client, name, sensor_config, topics, sensor_index):
+        self.pin = sensor_config.get('pin')
+        self.name = name
+        name_temp = sensor_config.get('name_temp')
+        name_humidity = sensor_config.get('name_humidity')
+        super().__init__(dht22_sensor=DHT22Sensor(pin=self.pin),
+                         mqtt_client=home_client,
+                         name_temp=name_temp,
+                         temp_topic=topics.get('temperature_topic'),
+                         temp_discovery_topic=topics.get('temperature_discovery'),
+                         name_humidity=name_humidity,
+                         humidity_topic=topics.get('humidity_topic'),
+                         humidity_discovery_topic=topics.get('humidity_discovery'),
+                         timer_n=sensor_index)
+
+    def __repr__(self):
+        return f"<HomeWeatherSensor| {self.name} | pin:{self.pin}>"

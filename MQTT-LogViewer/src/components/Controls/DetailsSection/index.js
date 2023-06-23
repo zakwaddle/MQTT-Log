@@ -4,6 +4,7 @@ import {useSelector} from "react-redux";
 import DeviceDetailsView from "./DeviceDetailsView";
 import SensorDetails from "./SensorDetailsView/SensorDetails";
 import AddSensorView from "./AddSensorView";
+import UpdateConfigJsonView from "./updateConfigJsonView";
 
 
 const Wrapper = ({children}) => {
@@ -22,7 +23,9 @@ export default function DetailSection (){
     const detailsViews = {
         'main': <DeviceDetailsView/>,
         'sensor': <SensorDetails/>,
-        'addSensor': <AddSensorView/>
+        'addSensor': <AddSensorView/>,
+        'updateConfigJson': <UpdateConfigJsonView/>
+
     }
     return (
         <Wrapper>

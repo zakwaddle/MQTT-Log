@@ -4,6 +4,7 @@ const GlobalStyle = createGlobalStyle`
   html, body {
     margin: 0;
     padding: 0;
+    overflow-x: hidden;
 
   }
   
@@ -15,10 +16,8 @@ const GlobalStyle = createGlobalStyle`
   body {
     font-size: 12px;
     background-color: whitesmoke;
-    overflow: hidden;
-    
     @media (max-width: 429px) {
-      font-size: 16px;
+      font-size: 14px;
     }
   }
 

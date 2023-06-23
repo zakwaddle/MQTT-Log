@@ -11,7 +11,7 @@ const initialState = {
     ftpServer: null,
     mqttBroker: null,
     shouldScroll: true,
-    menuSelection: 'Devices',
+    menuSelection: 'Logs',
     detailsSectionView: 'main',
     selectedDevice: null,
     selectedSensor: null,
