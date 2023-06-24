@@ -2,7 +2,6 @@ import React, {useState} from "react";
 import styled from "styled-components";
 import {useDispatch, useSelector} from "react-redux";
 import {Button} from "../../../../styles/SectionStyles";
-import {PropStack} from "../../../UI/Property";
 import {globalStateActions} from "../../../../store/globalStateSlice";
 import SensorCard from "./SensorCard";
 import useApi from "../../../../hooks/useApi";
@@ -27,7 +26,7 @@ const SensorRow = styled.div`
 `
 const SectionContainer = styled.div`
   display: flex;
-  flex-direction: column;
+  flex-direction: ${props => props['direction'] === 'row' ? 'row' : 'column'};
   padding: .5em;
   width: 100%;
 `
@@ -110,12 +109,12 @@ const DeviceDetailsView = () => {
 
     const {deleteDeviceConfig, deleteDevice} = useApi()
 
-    const {device_id, sensors} = config
-    console.log(device_id)
-    const wifi = config['wifi_network']
-    const ftp = config['ftp_server']
-    const mqtt = config['mqtt_broker']
+    const {device_id, sensors, wifi_network, ftp_server, mqtt_broker} = config
+    // const wifi = config['wifi_network']
+    // const ftp = config['ftp_server']
+    // const mqtt = config['mqtt_broker']
     const dispatch = useDispatch()
+    const showSaveButton = !deviceSettings || (deviceSettings['led_on_after_connect'] !== ledOn || deviceSettings['use_ping'] !== usePing)
 
     React.useEffect(() => {
         if (deviceSettings) {
@@ -126,7 +125,8 @@ const DeviceDetailsView = () => {
                 setLedOn(deviceSettings['led_on_after_connect'])
             }
         }
-    })
+    }, [selectedDevice, config])
+
     const handleDelete = () => {
 
         const handleCleanUp = () => {
@@ -138,11 +138,11 @@ const DeviceDetailsView = () => {
                 data && data.success && deleteDevice(device_id)
                     .then(data => {
                         data && data.success && handleCleanUp()
-                    })
-            })
+                    })})
     }
+
     const addSensorView = () => dispatch(globalStateActions.updateDetailsSectionView('addSensor'))
-    const updateConfigJsonView = () => dispatch(globalStateActions.updateDetailsSectionView('updateConfigJson'))
+    const updateHostView = () => dispatch(globalStateActions.updateDetailsSectionView('updateHost'))
     const {restartDevice, updateDeviceSettings, updateDeviceName} = useApi()
     const handleRestartClick = () => {
         restartDevice(device_id).then(data => console.log(data))
@@ -161,6 +161,7 @@ const DeviceDetailsView = () => {
                 data && data.success && handleCleanUp()
             })
     }
+
     if (showDeleteScreen) {
         return (
             <ConfirmContainer>
@@ -202,9 +203,8 @@ const DeviceDetailsView = () => {
             <Row>
                 <div><Button onClick={handleRestartClick}>Restart Device</Button></div>
                 <div><Button onClick={showDeleteConfirm}>Delete Device</Button></div>
-                <div><Button onClick={updateConfigJsonView}>Update Start Configs</Button></div>
+                <div><Button onClick={updateHostView}>Update Host</Button></div>
                 <div><Button onClick={showRenameConfirm}>Update Name</Button></div>
-                <div><Button onClick={handleUpdateSettings}>Save Settings</Button></div>
             </Row>
             <SectionContainer>
                 <h4>Device Details:</h4>
@@ -227,7 +227,7 @@ const DeviceDetailsView = () => {
 
             </SectionContainer>
 
-            <SectionContainer>
+            <SectionContainer direction={'row'}>
                 <HalfColumn>
                     <Form onSubmit={handleUpdateSettings}>
                         <FormLabel>Use Ping
@@ -244,7 +244,9 @@ const DeviceDetailsView = () => {
                     </Form>
                 </HalfColumn>
                 <HalfColumn>
-
+                    <ConfirmContainer>
+                        {showSaveButton && <Button onClick={handleUpdateSettings}>Save Settings</Button>}
+                    </ConfirmContainer>
                 </HalfColumn>
             </SectionContainer>
 
@@ -252,15 +254,15 @@ const DeviceDetailsView = () => {
                 <h4>Connections:</h4>
                 <Property>
                     <PropertyTitle>Wifi Network</PropertyTitle>
-                    <PropertyValue>{wifi && wifi.ssid}</PropertyValue>
+                    <PropertyValue>{wifi_network && wifi_network.ssid}</PropertyValue>
                 </Property>
                 <Property>
                     <PropertyTitle>MQTT Broker</PropertyTitle>
-                    <PropertyValue>{mqtt && mqtt.host_address}</PropertyValue>
+                    <PropertyValue>{mqtt_broker && mqtt_broker.host_address}</PropertyValue>
                 </Property>
                 <Property>
                     <PropertyTitle>FTP Server</PropertyTitle>
-                    <PropertyValue>{ftp && ftp.host_address}</PropertyValue>
+                    <PropertyValue>{ftp_server && ftp_server.host_address}</PropertyValue>
                 </Property>
             </SectionContainer>
 
