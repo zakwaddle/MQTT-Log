@@ -26,7 +26,7 @@ const InfoWindow = styled.div`
 
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  //justify-content: center;
 
   background-color: white;
   border: 1px solid darkgrey;
