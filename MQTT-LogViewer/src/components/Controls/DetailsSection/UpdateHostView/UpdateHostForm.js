@@ -13,15 +13,12 @@ const Form = styled.form`
   padding: 1em;
 `
 
-const UpdateConfigJsonForm = ({submitHandler, cancelHandler}) => {
+const UpdateHostForm = ({submitHandler, cancelHandler}) => {
     const [host, setHome] = useState('')
-    const [name, setName] = useState('')
-    const [wifiSSID, setWifiSSID] = useState('')
-    const [wifiPassword, setWifiPassword] = useState('')
 
     const handleSubmit = async (event) => {
         event.preventDefault()
-        submitHandler(host, name, wifiSSID, wifiPassword)
+        submitHandler(host)
     }
     return (
         <Box>
@@ -29,15 +26,7 @@ const UpdateConfigJsonForm = ({submitHandler, cancelHandler}) => {
                 <label>Host
                     <input type={'text'} value={host} onChange={event => setHome(event.target.value)}/>
                 </label>
-                <label>Display Name
-                    <input type={'text'} value={name} onChange={event => setName(event.target.value)}/>
-                </label>
-                <label>Wifi SSID
-                    <input type={'text'} value={wifiSSID} onChange={event => setWifiSSID(event.target.value)}/>
-                </label>
-                <label>Wifi Password
-                    <input type={'text'} value={wifiPassword} onChange={event => setWifiPassword(event.target.value)}/>
-                </label>
+
                 <button type={'submit'} style={{display: 'None'}}>submit</button>
             </Form>
             <div>
@@ -50,4 +39,4 @@ const UpdateConfigJsonForm = ({submitHandler, cancelHandler}) => {
 
 }
 
-export default UpdateConfigJsonForm;
+export default UpdateHostForm;
