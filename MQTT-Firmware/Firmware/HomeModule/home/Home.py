@@ -87,6 +87,9 @@ class Home:
             print(f'received settings')
             data = response.json()
             save_data(data)
+            if data['display_name'] != self.device_settings.name:
+                self.device_settings.name = data['display_name']
+                self.device_settings.save()
             return data
 
     def announce_ones_self(self):
