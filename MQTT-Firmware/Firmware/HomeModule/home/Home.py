@@ -86,10 +86,13 @@ class Home:
         if response.status_code == 200:
             print(f'received settings')
             data = response.json()
+            if data is None:
+                return data
             save_data(data)
             if data['display_name'] != self.device_settings.name:
                 self.device_settings.name = data['display_name']
                 self.device_settings.save()
+                print(f'device name updated to: {self.device_settings.name}')
             return data
 
     def announce_ones_self(self):
@@ -229,23 +232,6 @@ class Home:
     def set_connection_check_timer(self):
         self.timer = Timer(timer_number=0, period=5000, mode=machine.Timer.PERIODIC, callback=self.check_connections)
 
-    # def connect(self, use_status_led=True, led_on_after_connect=True):
-    #     print("\nconnecting WiFi")
-    #
-    #     self.wifi_manager.connect_wifi()
-    #     print("\nconnecting MQTT")
-    #     self.mqtt_manager.connect_mqtt()
-    #     self.log("Connected to Wifi and MQTT")
-    #     self.set_connection_check_timer()
-    #     if self.wifi_manager.is_connected() and self.mqtt_manager.is_connected and use_status_led:
-    #         if self.status_pin:
-    #             led = StatusLED(self.status_pin)
-    #             led.blink_light()
-    #             led.blink_light()
-    #
-    #             if led_on_after_connect:
-    #                 led.on()
-
     def subscribe_sensors(self):
         if self.sensors is not None:
             for s in self.sensors:
@@ -309,6 +295,14 @@ class Home:
                     wp = new_config.get('wifi_password')
                     if h is not None and n is not None and ws is not None and wp is not None:
                         self.device_settings.save_new_config(new_config)
+
+                elif command == 'update_host':
+
+                    new_host = instructions.get("host")
+                    if new_host is not None:
+                        self.device_settings.host = new_host
+                        self.device_settings.save()
+
                 elif command == 'update_all':
                     print('\ndownloading all...\n')
                     self.log("downloading update", log_type='update')
