@@ -32,18 +32,18 @@ const SectionContainer = styled.div`
   width: 100%;
 `
 
-const DeviceTitle =styled.h1`
+const DeviceTitle = styled.h1`
   margin: .25em 0 .5em 1.5em;
 `
 const Box = styled.div`
-  
+
   width: 100%;
   height: 100%;
-  
+
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  
+
 `
 const Property = styled.div`
   display: flex;
@@ -84,6 +84,14 @@ const FormLabel = styled.form`
   justify-content: space-between;
 `
 
+const ConfirmContainer = styled.div`
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+`
 const DeviceDetailsView = () => {
     const selectedDevice = useSelector(state => state['globalState']['selectedDevice'])
     const config = selectedDevice.config
@@ -91,68 +99,131 @@ const DeviceDetailsView = () => {
 
     const [usePing, setUsePing] = useState(true)
     const [ledOn, setLedOn] = useState(true)
+    const [showDeleteScreen, setShowDeleteScreen] = useState(false)
+    const [showRenameScreen, setShowRenameScreen] = useState(false)
+    const [newName, setNewName] = useState('')
 
-    const {deviceId, sensors} = config
+    const showDeleteConfirm = () => setShowDeleteScreen(true)
+    const hideDeleteConfirm = () => setShowDeleteScreen(false)
+    const showRenameConfirm = () => setShowRenameScreen(true)
+    const hideRenameConfirm = () => setShowRenameScreen(false)
+
+    const {deleteDeviceConfig, deleteDevice} = useApi()
+
+    const {device_id, sensors} = config
+    console.log(device_id)
     const wifi = config['wifi_network']
     const ftp = config['ftp_server']
     const mqtt = config['mqtt_broker']
     const dispatch = useDispatch()
 
     React.useEffect(() => {
-        if (deviceSettings){
-            // console.log(deviceSettings['use_ping'] !== undefined)
-            // console.log(deviceSettings['led_on_after_connect'] !== undefined)
-            if (deviceSettings['use_ping'] !== undefined){
+        if (deviceSettings) {
+            if (deviceSettings['use_ping'] !== undefined) {
                 setUsePing(deviceSettings['use_ping'])
             }
-            if (deviceSettings['led_on_after_connect'] !== undefined){
+            if (deviceSettings['led_on_after_connect'] !== undefined) {
                 setLedOn(deviceSettings['led_on_after_connect'])
             }
         }
-        // const ping = (deviceSettings && !!deviceSettings['use_ping'] ? deviceSettings['use_ping'] : true)
-        // const ledOnAfterConnect = (deviceSettings && !!deviceSettings['led_on_after_connect'] ? deviceSettings['led_on_after_connect'] : true)
     })
+    const handleDelete = () => {
 
+        const handleCleanUp = () => {
+            dispatch(globalStateActions.updateShouldUpdateDevices(true))
+            dispatch(globalStateActions.updateSelectedDevice(null))
+        }
+        deleteDeviceConfig(device_id)
+            .then(data => {
+                data && data.success && deleteDevice(device_id)
+                    .then(data => {
+                        data && data.success && handleCleanUp()
+                    })
+            })
+    }
     const addSensorView = () => dispatch(globalStateActions.updateDetailsSectionView('addSensor'))
     const updateConfigJsonView = () => dispatch(globalStateActions.updateDetailsSectionView('updateConfigJson'))
-    const {restartDevice, updateDeviceSettings} = useApi()
+    const {restartDevice, updateDeviceSettings, updateDeviceName} = useApi()
     const handleRestartClick = () => {
-        restartDevice(deviceId).then(data => console.log(data))
+        restartDevice(device_id).then(data => console.log(data))
     }
     const handleUpdateSettings = () => {
-        updateDeviceSettings(deviceId, {'use_ping': usePing, 'led_on_after_connect': ledOn})
+        updateDeviceSettings(device_id, {'use_ping': usePing, 'led_on_after_connect': ledOn})
             .then(data => console.log(data))
     }
+    const handleUpdateName = () => {
+        const handleCleanUp = () => {
+            dispatch(globalStateActions.updateShouldUpdateDevices(true))
+            hideRenameConfirm()
+        }
+        updateDeviceName(device_id, newName)
+            .then(data => {
+                data && data.success && handleCleanUp()
+            })
+    }
+    if (showDeleteScreen) {
+        return (
+            <ConfirmContainer>
+                <h2>Delete {selectedDevice['display_name']}?</h2>
+                <p>This will delete both the device and device configuration</p>
+                <br/>
+                <Row>
+                    <Button onClick={hideDeleteConfirm}>Cancel</Button>
+                    <Button onClick={handleDelete}>Delete</Button>
+                </Row>
+            </ConfirmContainer>
+        )
+    }
+    if (showRenameScreen) {
+        return (
+            <ConfirmContainer>
+                <h2>Rename {selectedDevice['display_name']}</h2>
+                <br/>
+                <Form onSubmit={handleUpdateName}>
+                    <FormLabel>New Name
+                        <input type={'text'}
+                               value={newName}
+                               onChange={event => setNewName(event.target.value)}/>
+                    </FormLabel>
+
+                    <button type={'submit'} style={{display: 'None'}}>submit</button>
+                </Form>
+                <Row>
+                    <Button onClick={hideRenameConfirm}>Cancel</Button>
+                    <Button onClick={handleUpdateName}>Rename</Button>
+                </Row>
+            </ConfirmContainer>
+        )
+    }
+
     return (
         <Box>
             <DeviceTitle>{selectedDevice['display_name']}</DeviceTitle>
             <Row>
                 <div><Button onClick={handleRestartClick}>Restart Device</Button></div>
+                <div><Button onClick={showDeleteConfirm}>Delete Device</Button></div>
                 <div><Button onClick={updateConfigJsonView}>Update Start Configs</Button></div>
+                <div><Button onClick={showRenameConfirm}>Update Name</Button></div>
                 <div><Button onClick={handleUpdateSettings}>Save Settings</Button></div>
             </Row>
             <SectionContainer>
                 <h4>Device Details:</h4>
-                    {/*<PropStack label={"Name"}>{selectedDevice['display_name']}</PropStack>*/}
-                    {/*<PropStack label={"DeviceID"}>{config['device_id']}</PropStack>*/}
-                    {/*<PropStack label={"ConfigID"}>{config.id}</PropStack>*/}
-                    {/*<PropStack label={"Platform"}>{selectedDevice['platform']}</PropStack>*/}
-                    <Property>
-                        <PropertyTitle>Name</PropertyTitle>
-                        <PropertyValue>{selectedDevice['display_name']}</PropertyValue>
-                    </Property>
-                    <Property>
-                        <PropertyTitle>DeviceID</PropertyTitle>
-                        <PropertyValue>{config['device_id']}</PropertyValue>
-                    </Property>
-                    <Property>
-                        <PropertyTitle>ConfigID</PropertyTitle>
-                        <PropertyValue>{config.id}</PropertyValue>
-                    </Property>
-                    <Property>
-                        <PropertyTitle>Platform</PropertyTitle>
-                        <PropertyValue>{selectedDevice['platform']}</PropertyValue>
-                    </Property>
+                <Property>
+                    <PropertyTitle>Name</PropertyTitle>
+                    <PropertyValue>{selectedDevice['display_name']}</PropertyValue>
+                </Property>
+                <Property>
+                    <PropertyTitle>DeviceID</PropertyTitle>
+                    <PropertyValue>{config['device_id']}</PropertyValue>
+                </Property>
+                <Property>
+                    <PropertyTitle>ConfigID</PropertyTitle>
+                    <PropertyValue>{config.id}</PropertyValue>
+                </Property>
+                <Property>
+                    <PropertyTitle>Platform</PropertyTitle>
+                    <PropertyValue>{selectedDevice['platform']}</PropertyValue>
+                </Property>
 
             </SectionContainer>
 
@@ -179,18 +250,18 @@ const DeviceDetailsView = () => {
 
             <SectionContainer>
                 <h4>Connections:</h4>
-                    <Property>
-                        <PropertyTitle>Wifi Network</PropertyTitle>
-                        <PropertyValue>{wifi && wifi.ssid}</PropertyValue>
-                    </Property>
-                    <Property>
-                        <PropertyTitle>MQTT Broker</PropertyTitle>
-                        <PropertyValue>{mqtt && mqtt.host_address}</PropertyValue>
-                    </Property>
-                    <Property>
-                        <PropertyTitle>FTP Server</PropertyTitle>
-                        <PropertyValue>{ftp && ftp.host_address}</PropertyValue>
-                    </Property>
+                <Property>
+                    <PropertyTitle>Wifi Network</PropertyTitle>
+                    <PropertyValue>{wifi && wifi.ssid}</PropertyValue>
+                </Property>
+                <Property>
+                    <PropertyTitle>MQTT Broker</PropertyTitle>
+                    <PropertyValue>{mqtt && mqtt.host_address}</PropertyValue>
+                </Property>
+                <Property>
+                    <PropertyTitle>FTP Server</PropertyTitle>
+                    <PropertyValue>{ftp && ftp.host_address}</PropertyValue>
+                </Property>
             </SectionContainer>
 
             <SectionContainer>

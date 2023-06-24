@@ -130,6 +130,15 @@ const useApi = () => {
         setLoading(false);
         return data;
     };
+    const deleteDeviceConfig = async (id) => {
+        setLoading(true);
+        const response = await fetch(`${baseUrl}/devices/${id}/config`, {
+            method: 'DELETE'
+        });
+        const data = await response.json();
+        setLoading(false);
+        return data;
+    };
 
     const fetchDeviceSensors = async (id) => {
         setLoading(true);
@@ -339,6 +348,7 @@ const useApi = () => {
         deleteDevice,
         fetchDeviceConfig,
         updateDeviceConfig,
+        deleteDeviceConfig,
         fetchDeviceSensors,
         addSensor,
         updateSensorConfig,
