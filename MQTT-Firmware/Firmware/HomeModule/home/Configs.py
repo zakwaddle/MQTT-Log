@@ -73,10 +73,10 @@ class DeviceSettings:
 
     def __init__(self):
         configs = self.__load_config()
-        self.host = configs['host']
-        self.name = configs['name']
-        self.ssid = configs['wifi_ssid']
-        self.password = configs['wifi_password']
+        self.host = configs.get('host')
+        self.name = configs.get('name')
+        self.ssid = configs.get('wifi_ssid')
+        self.password = configs.get('wifi_password')
 
     def save(self):
         self.__save_config({
