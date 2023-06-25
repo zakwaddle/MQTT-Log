@@ -11,6 +11,7 @@ class Unit:
     # local_firmware_folder = "/Users/zakwaddle/MQTT-HomeKit-ESP32/Firmware"
     local_firmware_folder = firmware_folder
     local_home_path = f"{local_firmware_folder}/HomeModule"
+
     ftp_home_folder = f"/upload/Firmware/HomeModule"
 
     @classmethod

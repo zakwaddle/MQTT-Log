@@ -107,7 +107,7 @@ const DeviceDetailsView = () => {
     const showRenameConfirm = () => setShowRenameScreen(true)
     const hideRenameConfirm = () => setShowRenameScreen(false)
 
-    const {deleteDeviceConfig, deleteDevice} = useApi()
+    const {deleteDeviceConfig, deleteDevice, sendMessage} = useApi()
 
     const {device_id, sensors, wifi_network, ftp_server, mqtt_broker} = config
     // const wifi = config['wifi_network']
@@ -161,6 +161,8 @@ const DeviceDetailsView = () => {
                 data && data.success && handleCleanUp()
             })
     }
+    const handleDownloadUpdate = () => sendMessage(device_id, {"command": "download_update"})
+        .then(data => console.log(data))
 
     if (showDeleteScreen) {
         return (
@@ -205,6 +207,7 @@ const DeviceDetailsView = () => {
                 <div><Button onClick={showDeleteConfirm}>Delete Device</Button></div>
                 <div><Button onClick={updateHostView}>Update Host</Button></div>
                 <div><Button onClick={showRenameConfirm}>Update Name</Button></div>
+                <div><Button onClick={handleDownloadUpdate}>Download Update</Button></div>
             </Row>
             <SectionContainer>
                 <h4>Device Details:</h4>

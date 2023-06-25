@@ -31,6 +31,7 @@ class FTPClient:
         self.ftp = FTP()
         self.ftp.connect(self.host)
         self.ftp.login(self.user, self.password)
+        print('connected ftp')
 
     def disconnect(self):
         """
@@ -38,6 +39,7 @@ class FTPClient:
         """
         if self.ftp:
             self.ftp.quit()
+            print('disconnected ftp')
 
     def download_file(self, remote_file_path, local_file_path):
         """
@@ -73,13 +75,13 @@ class FTPClient:
         """
         self.ftp.cwd(path)
 
-    def list_directory(self):
+    def list_directory(self, **kwargs):
         """
         Lists the contents of the current directory on the FTP server.
 
         :return: A list of the names of the files and directories in the current directory.
         """
-        return self.ftp.nlst()
+        return self.ftp.dir(**kwargs)
 
 
 class FirmwareUpdater:
@@ -211,6 +213,126 @@ class FirmwareUpdater:
         """
         self._remove_downloaded_files(target_filepath)
 
+    # def download_home_package(self):
+    #     stuff = []
+    #     remote_root = f"{self.home_update_path}/mpy/home"
+    #     current_root = f"{self.home_update_path}/mpy/home"
+    #
+    #     def handle_file(file_name):
+    #         pass
+    #
+    #     def handle_dir(dir_name):
+    #
+    #         self.ftp_client.change_directory(dir_name)
+    #         if current_root != remote_root:
+    #             current_root = f"{current_root}"
+    #         self.ftp_client.list_directory(callback=sort_item)
+    #         if current_root != remote_root:
+    #             self.ftp_client.change_directory('..')
+    #
+    #     def sort_item(thing):
+    #         i = thing.split(' ')
+    #         isDir = thing[0] == "d"
+    #         name = i[-1]
+    #         stuff.append(name)
+    #
+    #     self.ftp_client.connect()
+    #
+    #     self.ftp_client.ftp.makepasv()
+    #     handle_dir(remote_root)
+    #     # self.ftp_client.change_directory(remote_root)
+    #     # self.ftp_client.list_directory(callback=sort_item)
+    #
+    #     print(stuff)
+
+
+class PackageDownloader:
+
+    def __init__(self, updater: FirmwareUpdater):
+        self.updater = updater
+        self.package_name = ''
+        self.package_root = ''
+        self.current_remote_dir = ''
+        self.current_local_dir = '/update/home'
+        self.directories = []
+        self.files = []
+
+    def sort_item(self, thing):
+        i = thing.split(' ')
+        isDir = thing[0] == "d"
+        name = i[-1]
+        if isDir:
+            if name == self.package_root:
+                return
+            self.directories.append(name)
+            # else:
+            #     self.current_remote_dir = f'{self.current_remote_dir}/{dir_name}'
+            #     self.current_local_dir = f'{self.current_local_dir}/{dir_name}'
+            # self.handle_dir(name)
+        else:
+            self.handle_file(name)
+
+    def handle_file(self, file_name):
+        remote_path = f"{self.current_remote_dir}/{file_name}"
+        local_path = f"{self.current_local_dir}/{file_name}"
+        print(f'handle_file: {file_name}')
+        print(f'remote: {remote_path}')
+        print(f'local: {local_path}')
+        self.files.append((remote_path, local_path))
+        # self.updater.ftp_client.download_file(remote_path, local_path)
+
+    def handle_dir(self, dir_name):
+        # if dir_name == self.package_root:
+        #     self.current_remote_dir = dir_name
+        # else:
+        #     self.current_remote_dir = f'{self.current_remote_dir}/{dir_name}'
+        #     self.current_local_dir = f'{self.current_local_dir}/{dir_name}'
+        # self.directories.append(self.current_remote_dir)
+        self.current_remote_dir = dir_name
+        self.updater.makedirs(self.current_local_dir)
+        self.updater.ftp_client.change_directory(self.current_remote_dir)
+        self.updater.ftp_client.list_directory(callback=self.sort_item)
+        # if dir_name != self.package_root:
+        #     self.current_remote_dir = self.current_remote_dir.removesuffix(f'/{dir_name}')
+        #     self.current_local_dir = self.current_local_dir.removesuffix(f'/{dir_name}')
+        #     self.updater.ftp_client.change_directory(self.current_remote_dir)
+
+    def download_package(self, package_root, folder=None):
+        def download_files():
+            for i in self.files:
+                self.updater.ftp_client.download_file(i[0], i[1])
+            self.files = []
+
+        self.package_root = package_root
+        self.current_local_dir = '/update/home'
+        if folder is not None:
+            self.package_root = package_root + folder
+            self.current_local_dir = f'{self.current_local_dir}{folder}'
+        self.updater.ftp_client.connect()
+        self.updater.ftp_client.ftp.makepasv()
+        try:
+            self.handle_dir(self.package_root)
+            download_files()
+            # for i in self.files:
+            #     self.updater.ftp_client.download_file(i[0], i[1])
+            # self.files = []
+
+            # for d in self.directories:
+            #     self.handle_dir(d)
+            #     download_files()
+
+        except Exception as e:
+            print(f'Download Package Error: {e}')
+        finally:
+            self.updater.ftp_client.disconnect()
+
+        # self.updater.ftp_client.connect()
+        # self.updater.ftp_client.ftp.makepasv()
+        # self.updater.ftp_client.disconnect()
+
+        # print(self.files)
+        # print(self.directories)
+
 
 class UpdateManager:
     """
@@ -274,6 +396,16 @@ class UpdateManager:
             local_path = self.firmware_updater.download(f"{f}")
             to_update.append((f, local_path))
         return to_update
+
+    def download_update(self):
+        self.observe('downloading package update')
+        root = f'/{self.firmware_updater.home_update_path}/mpy/home'
+
+        downloader = PackageDownloader(self.firmware_updater)
+        downloader.download_package(root)
+        downloader.download_package(root, '/sensors')
+        downloader.download_package(root, '/lib')
+        downloader.download_package(root, '/lib/umqtt')
 
     def update_all(self, update_list):
         """

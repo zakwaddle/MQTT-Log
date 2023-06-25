@@ -285,6 +285,8 @@ class Home:
                     print('downloading update...')
                     self.log("downloading update", log_type='update')
                     self.update_manager.download_and_update('/' + msg)
+                elif command == 'download_update':
+                    self.update_manager.download_update()
                 elif command == 'update_home_package':
                     pass
                 elif command == 'update_config':
@@ -297,7 +299,6 @@ class Home:
                         self.device_settings.save_new_config(new_config)
 
                 elif command == 'update_host':
-
                     new_host = instructions.get("host")
                     if new_host is not None:
                         self.device_settings.host = new_host

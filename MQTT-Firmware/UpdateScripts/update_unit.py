@@ -84,9 +84,9 @@ def check_in():
 # henry.restart()
 # henry.check_in()
 # check_in()
-tester_boy.update_files([
-    "/home/Timer.py",
-    "/config.py"
-])
-# all_units.upload_home_package()
+# tester_boy.update_files([
+#     "/home/Timer.py",
+#     "/config.py"
+# ])
+all_units.upload_home_package()
 # all_units.update_files(c, refresh=False)
