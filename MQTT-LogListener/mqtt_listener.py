@@ -1,3 +1,6 @@
+import socket
+import time
+
 from paho.mqtt import client as mqtt_client
 import json
 import requests
@@ -38,20 +41,41 @@ def on_message(client, userdata, msg):
         print("not json: ", msg)
 
 
-def connect_mqtt() -> mqtt_client:
+def create_mqtt_client() -> mqtt_client:
     client = mqtt_client.Client()
     client.on_connect = on_connect
     client.on_message = on_message
     client.username_pw_set(username=MQTT_USER, password=MQTT_PW)
-    client.connect(host=MQTT_HOST, port=int(MQTT_PORT))
     return client
 
 
-if __name__ == "__main__":
-    mqtt_listener = connect_mqtt()
+def connect_client():
+    connected = False
+    while not connected:
+        try:
+            client = create_mqtt_client()
+            client.connect(host=MQTT_HOST, port=int(MQTT_PORT))
+            connected = True
+            return client
+        except socket.gaierror:
+            print('socket.gaierror: I think its a connection thing')
+            time.sleep(15)
+        except Exception as err:
+            print("Connection Error: ", err)
+            time.sleep(15)
+
+
+def main():
+    mqtt_listener = connect_client()
     try:
         mqtt_listener.loop_forever()
     except Exception as e:
         print(e)
     finally:
         mqtt_listener.loop_stop()
+
+
+if __name__ == "__main__":
+
+    while True:
+        main()

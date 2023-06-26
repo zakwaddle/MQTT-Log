@@ -58,7 +58,6 @@ class Home:
         self._platform = sys.platform
         if self._platform not in ['rp2', 'esp32']:
             raise HomeError(f"Unsupported platform: {self._platform}")
-
         if self._platform == "rp2":
             self.status_pin = "LED"
         elif self._platform == 'esp32':
@@ -286,9 +285,28 @@ class Home:
                     self.log("downloading update", log_type='update')
                     self.update_manager.download_and_update('/' + msg)
                 elif command == 'download_update':
-                    self.update_manager.download_update()
+                    remote_root = "/upload/Firmware/HomeModule/mpy"
+                    directories = [
+                        '/home',
+                        '/home/sensors',
+                        '/home/lib',
+                        '/home/lib/umqtt'
+                    ]
+                    self.update_manager.download_update(remote_root, directories)
                 elif command == 'update_home_package':
-                    pass
+                    remote_root = "/upload/Firmware/HomeModule/mpy"
+                    directories = [
+                        '/home',
+                        '/home/sensors',
+                        '/home/lib',
+                        '/home/lib/umqtt'
+                    ]
+                    self.update_manager.download_update(remote_root, directories)
+
+                elif command == 'update_main':
+                    path = 'upload/Firmware/HomeModule/main.py'
+                    self.update_manager.download_main(path)
+
                 elif command == 'update_config':
                     new_config = instructions.get("new_config")
                     h = new_config.get('host')
@@ -386,9 +404,11 @@ class Home:
             utime.sleep_ms(100)
 
     def run(self):
+
         try:
             self.main()
         except KeyboardInterrupt:
             self.status_led_off()
+            raise KeyboardInterrupt
         except Exception as e:
             self.restart_on_error(f'Main Loop Error: \n\t{e}')

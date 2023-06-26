@@ -28,6 +28,7 @@ const SectionContainer = styled.div`
   display: flex;
   flex-direction: ${props => props['direction'] === 'row' ? 'row' : 'column'};
   padding: .5em;
+  margin: .5em;
   width: 100%;
 `
 
@@ -138,7 +139,8 @@ const DeviceDetailsView = () => {
                 data && data.success && deleteDevice(device_id)
                     .then(data => {
                         data && data.success && handleCleanUp()
-                    })})
+                    })
+            })
     }
 
     const addSensorView = () => dispatch(globalStateActions.updateDetailsSectionView('addSensor'))
@@ -162,6 +164,8 @@ const DeviceDetailsView = () => {
             })
     }
     const handleDownloadUpdate = () => sendMessage(device_id, {"command": "download_update"})
+        .then(data => console.log(data))
+    const handleUpdateMain = () => sendMessage(device_id, {"command": "update_main"})
         .then(data => console.log(data))
 
     if (showDeleteScreen) {
@@ -203,11 +207,10 @@ const DeviceDetailsView = () => {
         <Box>
             <DeviceTitle>{selectedDevice['display_name']}</DeviceTitle>
             <Row>
-                <div><Button onClick={handleRestartClick}>Restart Device</Button></div>
-                <div><Button onClick={showDeleteConfirm}>Delete Device</Button></div>
-                <div><Button onClick={updateHostView}>Update Host</Button></div>
                 <div><Button onClick={showRenameConfirm}>Update Name</Button></div>
-                <div><Button onClick={handleDownloadUpdate}>Download Update</Button></div>
+                <div><Button onClick={updateHostView}>Update Host</Button></div>
+                <div><Button onClick={handleDownloadUpdate}>Update home</Button></div>
+                <div><Button onClick={handleUpdateMain}>Update main.py</Button></div>
             </Row>
             <SectionContainer>
                 <h4>Device Details:</h4>
@@ -229,6 +232,11 @@ const DeviceDetailsView = () => {
                 </Property>
 
             </SectionContainer>
+
+            <Row>
+                <div><Button onClick={handleRestartClick}>Restart Device</Button></div>
+                <div><Button onClick={showDeleteConfirm}>Delete Device</Button></div>
+            </Row>
 
             <SectionContainer direction={'row'}>
                 <HalfColumn>
