@@ -219,6 +219,7 @@ class FirmwareUpdater:
         self.ftp_client.download_file(remote_path, local_path)
         self.ftp_client.disconnect()
 
+
 class PackageDownloader:
 
     def __init__(self, updater: FirmwareUpdater, observer_func=None):
