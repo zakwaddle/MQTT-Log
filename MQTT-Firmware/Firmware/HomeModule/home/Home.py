@@ -144,8 +144,8 @@ class Home:
             try:
                 info = load_data()
                 print('loaded data from saved file')
-            except json.JSONDecodeError:
-                info = False
+            # except json.JSONDecodeError:
+            #     info = False
             except OSError:
                 info = False
         if not info:
@@ -160,11 +160,13 @@ class Home:
 
         if self.sensor_configs is not None:
             for i in self.sensor_configs:
+
                 sensor_type = i.get('sensor_type')
                 name = i.get('name')
                 sensor_config = i.get('sensor_config')
                 topics = sensor_config.get('topics') if sensor_config is not None else None
                 sensor_index = self.sensor_configs.index(i) + 1
+
                 if sensor_type == 'motion':
                     motion = HomeMotionSensor(self, name, sensor_config, topics, sensor_index)
                     motion.publish_discovery(self.device_info)
@@ -220,6 +222,7 @@ class Home:
         machine.reset()
 
     def log(self, log_message, log_type='info'):
+        print(log_message)
         if self.mqtt_manager.is_connected:
             self.publish(self.log_topic, json.dumps({
                 "unit_id": self.unit_id,
@@ -255,66 +258,39 @@ class Home:
                 self.mqtt_ping()
 
     def on_message(self, topic, msg):
-        """
-        Handles the MQTT messages.
 
-        :param topic: The topic of the message.
-        :param msg: The received message.
-        """
         if self.sensors is not None:
             for s in self.sensors:
                 if hasattr(s, 'on_message'):
                     s.on_message(topic, msg)
 
-        t = topic.decode('utf-8')
-        if t == f'command/{self.unit_id}' or t == 'command/all-units' or t == f'command/{self.display_name}':
+        def should_respond():
+            t = topic.decode('utf-8')
+            to_unit_id = t == f'command/{self.unit_id}'
+            to_all_units = t == 'command/all-units'
+            to_display_name = t == f'command/{self.display_name}'
+            return to_unit_id or to_all_units or to_display_name
 
+        if should_respond():
             try:
                 msg = msg.decode('utf-8')
                 instructions = json.loads(msg)
 
                 command = instructions.get("command")
-                file_list = instructions.get("file_list")
 
-                print(f'\nreceived command: {command}\n')
                 if command != 'check-in':
                     self.log(f'received command: {command}', log_type='info')
 
-                if command == 'update':
-                    print('downloading update...')
-                    self.log("downloading update", log_type='update')
-                    self.update_manager.download_and_update('/' + msg)
-                elif command == 'download_update':
-                    remote_root = "/upload/Firmware/HomeModule/mpy"
-                    directories = [
-                        '/home',
-                        '/home/sensors',
-                        '/home/lib',
-                        '/home/lib/umqtt'
-                    ]
-                    self.update_manager.download_update(remote_root, directories)
-                elif command == 'update_home_package':
-                    remote_root = "/upload/Firmware/HomeModule/mpy"
-                    directories = [
-                        '/home',
-                        '/home/sensors',
-                        '/home/lib',
-                        '/home/lib/umqtt'
-                    ]
-                    self.update_manager.download_update(remote_root, directories)
+                if command == 'update_home_package':
+                    remote_root = instructions.get("remote_root")
+                    directories = instructions.get("directories")
+                    if remote_root is not None and directories is not None:
+                        self.update_manager.download_update(remote_root, directories)
 
                 elif command == 'update_main':
-                    path = 'upload/Firmware/HomeModule/main.py'
-                    self.update_manager.download_main(path)
-
-                elif command == 'update_config':
-                    new_config = instructions.get("new_config")
-                    h = new_config.get('host')
-                    n = new_config.get('name')
-                    ws = new_config.get('wifi_ssid')
-                    wp = new_config.get('wifi_password')
-                    if h is not None and n is not None and ws is not None and wp is not None:
-                        self.device_settings.save_new_config(new_config)
+                    remote_file_path = instructions.get("remote_file_path")
+                    if remote_file_path is not None:
+                        self.update_manager.download_main(remote_file_path)
 
                 elif command == 'update_host':
                     new_host = instructions.get("host")
@@ -323,18 +299,17 @@ class Home:
                         self.device_settings.save()
 
                 elif command == 'update_all':
-                    print('\ndownloading all...\n')
+                    file_list = instructions.get("file_list")
+
                     self.log("downloading update", log_type='update')
                     to_update = self.update_manager.download_all(file_list)
 
-                    print("\nto_update:", *to_update, sep="\n")
                     self.log("updating files", log_type='update')
                     self.update_manager.update_all(to_update)
 
-                    print("\ndeleting update files...\n")
+                    self.log("deleting update files")
                     self.update_manager.remove_update_directory()
 
-                    print('\nrestarting...')
                     self.log("Finished updating. Restarting", log_type='update')
                     utime.sleep(2)
                     machine.reset()
@@ -343,7 +318,6 @@ class Home:
                     self.log('here', log_type='check-in')
 
                 elif command == 'restart':
-                    print('restarting...')
                     self.log("Received Restart Command. Restarting", log_type='restart')
 
                     utime.sleep(2)
@@ -352,13 +326,9 @@ class Home:
                 else:
                     self.log(f"Unknown command: {command}", log_type='error')
 
-                    print(f"\nUnknown command: {command}\n")
-
             except KeyError:
-                print("Error: Expected keys are not in the message.")
                 self.log("Error: Expected keys are not in the message.", log_type='error')
             except Exception as e:
-                print(f"Error in Home.on_message: {e}")
                 self.log(f"Error in Home.on_message: {e}", log_type='error')
 
     def publish(self, topic, message, **kwargs):
@@ -397,8 +367,7 @@ class Home:
 
     def main(self):
         self.start_sequence()
-        print("------listening for messages------")
-        self.log("listening for messages")
+        self.log("---listening for messages---")
         while True:
             self.check_msg()
             utime.sleep_ms(100)
