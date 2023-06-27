@@ -1,7 +1,6 @@
 import json
 
 
-
 class WifiConfig:
     def __init__(self, id, ssid, password, is_default):
         self.ssid = ssid
