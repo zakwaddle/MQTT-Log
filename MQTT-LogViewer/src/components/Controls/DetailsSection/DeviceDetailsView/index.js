@@ -163,9 +163,21 @@ const DeviceDetailsView = () => {
                 data && data.success && handleCleanUp()
             })
     }
-    const handleDownloadUpdate = () => sendMessage(device_id, {"command": "download_update"})
+    const handleDownloadUpdate = () => sendMessage(device_id, {
+        "command": "update_home_package",
+        "remote_root": "/upload/Firmware/HomeModule/mpy",
+        "directories": [
+            '/home',
+            '/home/sensors',
+            '/home/lib',
+            '/home/lib/umqtt'
+        ]
+    })
         .then(data => console.log(data))
-    const handleUpdateMain = () => sendMessage(device_id, {"command": "update_main"})
+    const handleUpdateMain = () => sendMessage(device_id, {
+        "command": "update_main",
+        "remote_file_path": "upload/Firmware/HomeModule/main.py"
+    })
         .then(data => console.log(data))
 
     if (showDeleteScreen) {
