@@ -9,6 +9,7 @@ from .sensors.StatusLED import StatusLED
 from .sensors import HomeMotionSensor, HomeWeatherSensor, HomeLEDDimmer
 from .Timer import Timer
 from .Configs import DeviceConfig, DeviceSettings
+from .CommandMessage import CommandMessage, MessageError
 # import config
 import ubinascii
 import urequests
@@ -44,6 +45,12 @@ class Home:
     Home class is a wrapper around the MQTT, WiFi and Update managers.
     It provides a simple interface to handle connections and updates.
     """
+
+    @staticmethod
+    def restart_device(delay_seconds=None):
+        if delay_seconds is not None:
+            utime.sleep(delay_seconds)
+        machine.reset()
 
     def __init__(self, use_ping=True):
         """
@@ -273,61 +280,11 @@ class Home:
 
         if should_respond():
             try:
-                msg = msg.decode('utf-8')
-                instructions = json.loads(msg)
+                command = CommandMessage(self, msg)
+                command.execute_command()
 
-                command = instructions.get("command")
-
-                if command != 'check-in':
-                    self.log(f'received command: {command}', log_type='info')
-
-                if command == 'update_home_package':
-                    remote_root = instructions.get("remote_root")
-                    directories = instructions.get("directories")
-                    if remote_root is not None and directories is not None:
-                        self.update_manager.download_update(remote_root, directories)
-
-                elif command == 'update_main':
-                    remote_file_path = instructions.get("remote_file_path")
-                    if remote_file_path is not None:
-                        self.update_manager.download_main(remote_file_path)
-
-                elif command == 'update_host':
-                    new_host = instructions.get("host")
-                    if new_host is not None:
-                        self.device_settings.host = new_host
-                        self.device_settings.save()
-
-                elif command == 'update_all':
-                    file_list = instructions.get("file_list")
-
-                    self.log("downloading update", log_type='update')
-                    to_update = self.update_manager.download_all(file_list)
-
-                    self.log("updating files", log_type='update')
-                    self.update_manager.update_all(to_update)
-
-                    self.log("deleting update files")
-                    self.update_manager.remove_update_directory()
-
-                    self.log("Finished updating. Restarting", log_type='update')
-                    utime.sleep(2)
-                    machine.reset()
-
-                elif command == 'check-in':
-                    self.log('here', log_type='check-in')
-
-                elif command == 'restart':
-                    self.log("Received Restart Command. Restarting", log_type='restart')
-
-                    utime.sleep(2)
-                    machine.reset()
-
-                else:
-                    self.log(f"Unknown command: {command}", log_type='error')
-
-            except KeyError:
-                self.log("Error: Expected keys are not in the message.", log_type='error')
+            except MessageError as e:
+                self.log(f'MessageError: {e.args}', log_type='error')
             except Exception as e:
                 self.log(f"Error in Home.on_message: {e}", log_type='error')
 
