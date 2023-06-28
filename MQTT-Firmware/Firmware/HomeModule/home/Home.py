@@ -10,7 +10,6 @@ from .sensors import HomeMotionSensor, HomeWeatherSensor, HomeLEDDimmer
 from .Timer import Timer
 from .Configs import DeviceConfig, DeviceSettings
 from .CommandMessage import CommandMessage, MessageError
-# import config
 import ubinascii
 import urequests
 
@@ -52,16 +51,7 @@ class Home:
             utime.sleep(delay_seconds)
         machine.reset()
 
-    def __init__(self, use_ping=True):
-        """
-        Initializes Home with the provided configuration dictionary.
-
-        Parameters:
-        config (dict): A dictionary containing the configurations for
-        unit id, WiFiManager, MQTTManager and UpdateManager.
-         Each of these configurations is another dictionary that
-         includes all the necessary parameters for the respective manager.
-        """
+    def __init__(self):
         self._platform = sys.platform
         if self._platform not in ['rp2', 'esp32']:
             raise HomeError(f"Unsupported platform: {self._platform}")
@@ -75,7 +65,7 @@ class Home:
         self.log_topic = f"z-home/log/{self.unit_id}"
 
         self.timer = None
-        self.use_ping = use_ping
+        self.use_ping = True
         self.sensors = []
         print("\nPlatform: ", self._platform, "\nName: ", self.device_settings.name, "\nUnit: ", self.unit_id)
 
@@ -134,8 +124,7 @@ class Home:
 
     def connect_ftp(self):
         if self.settings.ftp is not None:
-            self.update_manager = UpdateManager(unit_id=self.unit_id,
-                                                observer_func=self.log,
+            self.update_manager = UpdateManager(observer_func=self.log,
                                                 host=self.settings.ftp.host,
                                                 user=self.settings.ftp.username,
                                                 password=self.settings.ftp.password)
@@ -222,7 +211,6 @@ class Home:
         light.off()
 
     def restart_on_error(self, error_message):
-        print(error_message)
         self.log(f'{error_message} - Restarting', log_type='error')
         self.status_led_off()
         utime.sleep(5)
