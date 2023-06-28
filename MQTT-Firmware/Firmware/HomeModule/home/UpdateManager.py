@@ -1,7 +1,14 @@
 import os
 import uos
-import machine
 from .lib.ftplib import FTP
+
+
+class DownloadError(Exception):
+    pass
+
+
+class UpdateError(Exception):
+    pass
 
 
 class FTPClient:
@@ -87,24 +94,18 @@ class FTPClient:
 class FirmwareUpdater:
     """
     FirmwareUpdater class provides functionalities to download firmware
-    updates from a specific directory in the FTP server. It uses an instance of
-    the FTPClient class to perform FTP operations.
+    updates. It uses an instance of the FTPClient class to perform FTP operations.
     """
 
-    def __init__(self, host, user, password, unit_id):
+    def __init__(self, host, user, password):
         """
-        Constructs a FirmwareUpdater with provided FTP server details and the unit_id
-        which corresponds to the directory on the FTP server where firmware updates
-        are located.
+        Constructs a FirmwareUpdater with provided FTP server details.
 
         :param host: The FTP host address.
         :param user: The username for the FTP host.
         :param password: The password for the FTP host.
-        :param unit_id: The directory on the FTP server where firmware updates are located.
         """
         self.ftp_client = FTPClient(host, user, password)
-        self.update_path = f"upload/Firmware/{unit_id}"
-        self.home_update_path = f"upload/Firmware/HomeModule"
 
     @staticmethod
     def makedirs(path):
@@ -123,29 +124,6 @@ class FirmwareUpdater:
                 if e.args[0] != 17:
                     raise
 
-    def _download_file(self, remote_file_path):
-        """
-        Downloads a file from the FTP server and saves it locally.
-
-        :param remote_file_path: The path of the file on the FTP server.
-        :return: The local path where the file has been saved.
-        """
-        self.ftp_client.connect()
-        self.ftp_client.ftp.makepasv()
-        local_file_path = 'updated_files' + remote_file_path
-        # if remote_file_path.startswith('/home'):
-
-        local_dir = '/'.join(local_file_path.split('/')[:-1])
-        self.makedirs(local_dir)
-        if remote_file_path.startswith('/home'):
-            update_path = self.home_update_path + remote_file_path
-        else:
-            update_path = self.update_path + remote_file_path
-        print(f'update_path: {update_path}')
-        self.ftp_client.download_file(update_path, local_file_path)
-        self.ftp_client.disconnect()
-        return local_file_path
-
     @staticmethod
     def _update_file(remote_file_path, local_file_path):
         """
@@ -161,41 +139,6 @@ class FirmwareUpdater:
         with open(local_file_path, 'rb') as src, open(remote_file_path, 'wb') as dest:
             dest.write(src.read())
 
-    @staticmethod
-    def _remove_downloaded_files(local_file_path):
-        """
-        Deletes a file from the local file system.
-
-        :param local_file_path: The path of the file to be deleted.
-        """
-        try:
-            os.remove(local_file_path)
-            print("Removed file:", local_file_path)
-        except OSError as e:
-            print("Error removing file:", local_file_path, "| Error:", e)
-
-    def download_and_update(self, filename):
-        """
-        Downloads a file from the FTP server, updates a local file with the downloaded
-        file's content, and deletes the downloaded file.
-
-        :param filename: The name of the file on the FTP server to be downloaded.
-        """
-        local_fp = self._download_file(filename)
-        self._update_file(filename, local_fp)
-        self._remove_downloaded_files(local_fp)
-        machine.reset()
-
-    def download(self, filename):
-        """
-        Downloads a file from the FTP server.
-
-        :param filename: The name of the file on the FTP server to be downloaded.
-        :return str: The local path where the file has been saved.
-        """
-
-        return self._download_file(filename)
-
     def update(self, target, source_filepath):
         """
         Updates a local file with the contents of another local file.
@@ -204,14 +147,6 @@ class FirmwareUpdater:
         :param source_filepath: The path of the file that will be used to update.
         """
         self._update_file(target, source_filepath)
-
-    def remove_file(self, target_filepath: str):
-        """
-        Deletes a file from the local file system.
-
-        :param target_filepath: The path of the file to be deleted.
-        """
-        self._remove_downloaded_files(target_filepath)
 
     def download_file(self, remote_path, local_path):
         self.ftp_client.connect()
@@ -228,7 +163,7 @@ class PackageDownloader:
         self.package_name = ''
         self.package_root = ''
         self.current_remote_dir = ''
-        self.current_local_dir = '/update'
+        self.current_local_dir = '/updates'
         self.directories = []
         self.files = []
 
@@ -270,7 +205,7 @@ class PackageDownloader:
             self.files = []
 
         self.package_root = package_root
-        self.current_local_dir = '/update'
+        self.current_local_dir = '/updates'
         if folder is not None:
             self.package_root = package_root + folder
             self.current_local_dir = f'{self.current_local_dir}{folder}'
@@ -293,7 +228,7 @@ class UpdateManager:
     UpdateManager class handles the firmware updates for the device.
     """
 
-    def __init__(self, host, user, password, unit_id, observer_func=None):
+    def __init__(self, host, user, password, observer_func=None):
         """
         Initializes UpdateManager with provided parameters.
 
@@ -302,7 +237,7 @@ class UpdateManager:
         :param password (str): The password for the FTP host.
         :param unit_id (str): The unit id of the device.
         """
-        self.firmware_updater = FirmwareUpdater(host, user, password, unit_id)
+        self.firmware_updater = FirmwareUpdater(host, user, password)
         self.observer_func = observer_func
 
     def observe(self, message):
@@ -317,7 +252,7 @@ class UpdateManager:
         """
         # List all files and subdirectories in the directory
         for filename in uos.listdir(directory):
-            path = "{}/{}".format(directory, filename)
+            path = f"{directory}/{filename}"
 
             # Check if this is a file or a subdirectory
             if uos.stat(path)[0] == 0x8000:  # this is a file
@@ -328,73 +263,41 @@ class UpdateManager:
         # Now that the directory is empty, remove the directory itself
         uos.rmdir(directory)
 
-    def download_and_update(self, file_path):
-        """
-        Downloads the firmware update and applies it.
-
-        :param file_path: The file path on the FTP server for the firmware update.
-        """
-        self.firmware_updater.download_and_update(file_path)
-
     def download_main(self, remote_path):
-        update_path = '/updated_files/main.py'
-        self.firmware_updater.makedirs('/updated_files')
-        self.firmware_updater.download_file(remote_path, update_path)
-        self.firmware_updater.update('/main.py', '/updated_files/main.py')
-        self.remove_update_directory()
-        machine.reset()
+        local_path = '/updates/main.py'
+        try:
+            self.firmware_updater.makedirs('/updates')
+            self.firmware_updater.download_file(remote_path, local_path)
+        except Exception as e:
+            raise DownloadError(f"Error Downloading main.py: {e}")
 
-    def download_all(self, file_list):
-        """
-        Downloads all files from the FTP server.
-
-        :param file_list: The list of file paths on the FTP server to be downloaded.
-        :return list: A list of tuples where each tuple contains the remote file path and the local file path.
-        """
-        to_update = []
-        for f in file_list:
-            print(f"downloading:  {f}")
-            self.observe(f"downloading:  {f}")
-            local_path = self.firmware_updater.download(f"{f}")
-            to_update.append((f, local_path))
-        return to_update
+    def apply_updated_main(self):
+        try:
+            self.firmware_updater.update('/main.py', '/updates/main.py')
+        except Exception as e:
+            raise UpdateError(f"Error updating main.py: {e}")
+        else:
+            self.remove_update_directory()
 
     def download_update(self, remote_root, directories):
-        self.observe('downloading package update')
-
-        downloader = PackageDownloader(self.firmware_updater, observer_func=self.observe)
-        for d in directories:
-            downloader.download_package(remote_root, d)
-
-        # Remove the existing /home directory
         try:
-            self.rmdir('/home')
-        except OSError:
-            pass  # If the directory doesn't exist, an OSError will be thrown, so we just ignore it
+            downloader = PackageDownloader(self.firmware_updater, observer_func=self.observe)
+            for d in directories:
+                downloader.download_package(remote_root, d)
+        except Exception as e:
+            raise DownloadError(f"Error downloading home package: {e}")
 
-        # Move /update/home to /home
-        uos.rename('/update/home', '/home')
-
-        # Optionally, if you want to delete the /update directory after the move
+    def apply_updated_home_package(self):
         try:
-            uos.rmdir('/update')
-        except OSError:
-            pass  # If the directory doesn't exist, an OSError will be thrown, so we just ignore it
-
-        machine.reset()
-
-    def update_all(self, update_list):
-        """
-        Updates all local files with the contents of the corresponding downloaded files.
-
-        :param update_list: A list of tuples where each tuple contains the remote file path and the local file path.
-        """
-        for file, local_path in update_list:
-            self.observe(f"updating:  {file}")
-            self.firmware_updater.update(file, local_path)
+            self.rmdir('/home')  # Remove the existing /home directory
+            uos.rename('/updates/home', '/home')  # Move /update/home to /home
+        except Exception as e:
+            raise UpdateError(f'Error updating home package: {e}')
+        else:
+            self.remove_update_directory()
 
     def remove_update_directory(self):
         """
         Removes the directory where the downloaded files are stored.
         """
-        self.rmdir("/updated_files")
+        self.rmdir("/updates")
