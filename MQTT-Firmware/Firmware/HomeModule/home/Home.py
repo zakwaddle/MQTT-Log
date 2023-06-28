@@ -9,7 +9,7 @@ from .sensors.StatusLED import StatusLED
 from .sensors import HomeMotionSensor, HomeWeatherSensor, HomeLEDDimmer
 from .Timer import Timer
 from .Configs import DeviceConfig, DeviceSettings
-# import config
+from .CommandMessage import CommandMessage, MessageError
 import ubinascii
 import urequests
 
@@ -45,16 +45,13 @@ class Home:
     It provides a simple interface to handle connections and updates.
     """
 
-    def __init__(self, use_ping=True):
-        """
-        Initializes Home with the provided configuration dictionary.
+    @staticmethod
+    def restart_device(delay_seconds=None):
+        if delay_seconds is not None:
+            utime.sleep(delay_seconds)
+        machine.reset()
 
-        Parameters:
-        config (dict): A dictionary containing the configurations for
-        unit id, WiFiManager, MQTTManager and UpdateManager.
-         Each of these configurations is another dictionary that
-         includes all the necessary parameters for the respective manager.
-        """
+    def __init__(self):
         self._platform = sys.platform
         if self._platform not in ['rp2', 'esp32']:
             raise HomeError(f"Unsupported platform: {self._platform}")
@@ -68,7 +65,7 @@ class Home:
         self.log_topic = f"z-home/log/{self.unit_id}"
 
         self.timer = None
-        self.use_ping = use_ping
+        self.use_ping = True
         self.sensors = []
         print("\nPlatform: ", self._platform, "\nName: ", self.device_settings.name, "\nUnit: ", self.unit_id)
 
@@ -127,8 +124,7 @@ class Home:
 
     def connect_ftp(self):
         if self.settings.ftp is not None:
-            self.update_manager = UpdateManager(unit_id=self.unit_id,
-                                                observer_func=self.log,
+            self.update_manager = UpdateManager(observer_func=self.log,
                                                 host=self.settings.ftp.host,
                                                 user=self.settings.ftp.username,
                                                 password=self.settings.ftp.password)
@@ -215,7 +211,6 @@ class Home:
         light.off()
 
     def restart_on_error(self, error_message):
-        print(error_message)
         self.log(f'{error_message} - Restarting', log_type='error')
         self.status_led_off()
         utime.sleep(5)
@@ -273,61 +268,11 @@ class Home:
 
         if should_respond():
             try:
-                msg = msg.decode('utf-8')
-                instructions = json.loads(msg)
+                command = CommandMessage(self, msg)
+                command.execute_command()
 
-                command = instructions.get("command")
-
-                if command != 'check-in':
-                    self.log(f'received command: {command}', log_type='info')
-
-                if command == 'update_home_package':
-                    remote_root = instructions.get("remote_root")
-                    directories = instructions.get("directories")
-                    if remote_root is not None and directories is not None:
-                        self.update_manager.download_update(remote_root, directories)
-
-                elif command == 'update_main':
-                    remote_file_path = instructions.get("remote_file_path")
-                    if remote_file_path is not None:
-                        self.update_manager.download_main(remote_file_path)
-
-                elif command == 'update_host':
-                    new_host = instructions.get("host")
-                    if new_host is not None:
-                        self.device_settings.host = new_host
-                        self.device_settings.save()
-
-                elif command == 'update_all':
-                    file_list = instructions.get("file_list")
-
-                    self.log("downloading update", log_type='update')
-                    to_update = self.update_manager.download_all(file_list)
-
-                    self.log("updating files", log_type='update')
-                    self.update_manager.update_all(to_update)
-
-                    self.log("deleting update files")
-                    self.update_manager.remove_update_directory()
-
-                    self.log("Finished updating. Restarting", log_type='update')
-                    utime.sleep(2)
-                    machine.reset()
-
-                elif command == 'check-in':
-                    self.log('here', log_type='check-in')
-
-                elif command == 'restart':
-                    self.log("Received Restart Command. Restarting", log_type='restart')
-
-                    utime.sleep(2)
-                    machine.reset()
-
-                else:
-                    self.log(f"Unknown command: {command}", log_type='error')
-
-            except KeyError:
-                self.log("Error: Expected keys are not in the message.", log_type='error')
+            except MessageError as e:
+                self.log(f'MessageError: {e.args}', log_type='error')
             except Exception as e:
                 self.log(f"Error in Home.on_message: {e}", log_type='error')
 
