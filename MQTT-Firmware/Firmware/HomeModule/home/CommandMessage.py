@@ -1,6 +1,9 @@
 import json
-import machine
 import home.Home as home
+import home.UpdateManager as udm
+
+UpdateError = udm.UpdateError
+DownloadError = udm.DownloadError
 
 
 class MessageError(Exception):
@@ -58,18 +61,34 @@ class CommandMessage:
         remote_root = self.instructions.get("remote_root")
         directories = self.instructions.get("directories")
         if remote_root is not None and directories is not None:
-            self.home_client.update_manager.download_update(remote_root, directories)
+            self.home_client.log("Download home package update", log_type='update')
+            try:
+                self.home_client.update_manager.download_update(remote_root, directories)
+            except DownloadError as e:
+                self.home_client.log(e, log_type='error')
+            except UpdateError as e:
+                self.home_client.log(e, log_type='error')
+            else:
+                self.home_client.log("Updated home package - restarting to apply update", log_type='update')
+                self.home_client.restart_device(delay_seconds=3)
 
     def update_main(self):
         remote_file_path = self.instructions.get("remote_file_path")
         if remote_file_path is not None:
-            self.home_client.update_manager.download_main(remote_file_path)
+            self.home_client.log("Downloading main.py update", log_type='update')
+            try:
+                self.home_client.update_manager.download_main(remote_file_path)
+                self.home_client.update_manager.apply_updated_main()
+            except DownloadError as e:
+                self.home_client.log(e, log_type='error')
+            except UpdateError as e:
+                self.home_client.log(e, log_type='error')
+            else:
+                self.home_client.log("Updated main.py - restarting to apply update", log_type='update')
+                self.home_client.restart_device(delay_seconds=3)
 
     def update_host(self):
         new_host = self.instructions.get("host")
         if new_host is not None:
             self.home_client.device_settings.host = new_host
             self.home_client.device_settings.save()
-
-
-
