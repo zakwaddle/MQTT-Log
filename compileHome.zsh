@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Source and destination directories
-src_dir="/Users/zakwaddle/MQTT-Log/MQTT-Firmware/Firmware/HomeModule/home"
-dest_dir="/Users/zakwaddle/MQTT-Log/MQTT-Firmware/Firmware/HomeModule/mpy/home"
+src_dir="/Users/zakwaddle/MQTT-Log/MQTT-Firmware/Firmware/src/home"
+dest_dir="/Users/zakwaddle/MQTT-Log/MQTT-Firmware/Firmware/dist/home"
 
 # Check if destination directory exists, create if not
 if [ ! -d "$dest_dir" ]; then
