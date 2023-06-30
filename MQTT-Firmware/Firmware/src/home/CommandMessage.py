@@ -87,8 +87,16 @@ class CommandMessage:
                 self.home_client.log("Updated main.py - restarting to apply update", log_type='update')
                 self.home_client.restart_device(delay_seconds=3)
 
-    def update_host(self):
-        new_host = self.instructions.get("host")
-        if new_host is not None:
-            self.home_client.device_settings.host = new_host
-            self.home_client.device_settings.save()
+    # def update_host(self):
+    #     new_host = self.instructions.get("host")
+    #     if new_host is not None:
+    #         self.home_client.device_settings.host = new_host
+    #         self.home_client.device_settings.save()
+
+    def update(self):
+
+        manifest_path = self.instructions.get("manifest_path")
+        if manifest_path is not None:
+            self.home_client.update_manager.download_update_from_manifest(manifest_path)
+            print('downloaded update')
+            self.home_client.restart_device(3)

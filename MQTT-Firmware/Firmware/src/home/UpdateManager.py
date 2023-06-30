@@ -1,3 +1,4 @@
+import json
 import os
 import uos
 from .lib.ftplib import FTP
@@ -228,6 +229,10 @@ class UpdateManager:
     UpdateManager class handles the firmware updates for the device.
     """
 
+    @staticmethod
+    def item_is_file(item):
+        return uos.stat(f"/{item}")[0] == 0x8000
+
     def __init__(self, host, user, password, observer_func=None):
         """
         Initializes UpdateManager with provided parameters.
@@ -255,7 +260,7 @@ class UpdateManager:
             path = f"{directory}/{filename}"
 
             # Check if this is a file or a subdirectory
-            if uos.stat(path)[0] == 0x8000:  # this is a file
+            if self.item_is_file(path):  # this is a file
                 uos.remove(path)
             else:  # this is a directory
                 self.rmdir(path)
@@ -270,6 +275,14 @@ class UpdateManager:
             self.firmware_updater.download_file(remote_path, local_path)
         except Exception as e:
             raise DownloadError(f"Error Downloading main.py: {e}")
+
+    def download_manifest(self, remote_path):
+        local_path = '/updates/manifest.json'
+        try:
+            self.firmware_updater.makedirs('/updates')
+            self.firmware_updater.download_file(remote_path, local_path)
+        except Exception as e:
+            raise DownloadError(f"Error Downloading manifest.json: {e}")
 
     def apply_updated_main(self):
         try:
@@ -286,6 +299,51 @@ class UpdateManager:
                 downloader.download_package(remote_root, d)
         except Exception as e:
             raise DownloadError(f"Error downloading home package: {e}")
+
+    def download_update_from_manifest(self, remote_path):
+        def open_manifest():
+            with open("updates/manifest.json", 'r') as f:
+                return json.load(f)
+
+        # get update manifest
+        self.download_manifest(remote_path)
+        manifest = open_manifest()
+
+        directories = manifest.get('directories')
+        files = manifest.get('files')
+        package_root = manifest.get('package_root')
+
+        can_continue = directories is not None and files is not None and package_root is not None
+        if not can_continue:
+            raise UpdateError()
+
+        # make directories in updates folder
+        for i in directories:
+            path = i if i.startswith("/") else f"/{i}"
+            self.firmware_updater.makedirs(f"/updates{path}")
+
+        # download files
+        self.firmware_updater.ftp_client.connect()
+        for i in files:
+            remote_path = package_root + i
+            local_path = f"/updates{i}"
+            self.firmware_updater.ftp_client.download_file(remote_path, local_path)
+        self.firmware_updater.ftp_client.disconnect()
+
+        # update files
+        for file in uos.listdir('/updates'):
+            if file == "manifest.json":
+                continue
+            if self.item_is_file(f'/updates/{file}'):
+                self.firmware_updater.update(f'/{file}', f'/updates/{file}')
+                print('updated file: ', file)
+
+            else:
+                self.rmdir(f'/{file}')  # Remove the existing directory from root
+                uos.rename(f'/updates/{file}', f'/{file}')
+                print('updated directory: ', file)
+
+        self.remove_update_directory()
 
     def apply_updated_home_package(self):
         try:
