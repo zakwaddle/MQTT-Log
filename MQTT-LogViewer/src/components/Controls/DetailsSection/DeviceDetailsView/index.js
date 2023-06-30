@@ -172,13 +172,17 @@ const DeviceDetailsView = () => {
             '/home/lib',
             '/home/lib/umqtt'
         ]
-    })
-        .then(data => console.log(data))
+    }).then(data => console.log(data))
+
     const handleUpdateMain = () => sendMessage(device_id, {
         "command": "update_main",
         "remote_file_path": "upload/Firmware/HomeModule/main.py"
-    })
-        .then(data => console.log(data))
+    }).then(data => console.log(data))
+
+    const handleUpdate = () => sendMessage(device_id, {
+        "command": "update",
+        "manifest_path": "upload/Firmware/manifest.json"
+    }).then(data => console.log(data))
 
     if (showDeleteScreen) {
         return (
@@ -221,6 +225,7 @@ const DeviceDetailsView = () => {
             <Row>
                 <div><Button onClick={showRenameConfirm}>Update Name</Button></div>
                 <div><Button onClick={updateHostView}>Update Host</Button></div>
+                <div><Button onClick={handleUpdate}>Update</Button></div>
                 <div><Button onClick={handleDownloadUpdate}>Update home</Button></div>
                 <div><Button onClick={handleUpdateMain}>Update main.py</Button></div>
             </Row>
