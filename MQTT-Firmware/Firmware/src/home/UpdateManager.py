@@ -2,6 +2,7 @@ import json
 import os
 import uos
 from .lib.ftplib import FTP
+import errno
 
 
 class DownloadError(Exception):
@@ -91,28 +92,61 @@ class FTPClient:
         """
         return self.ftp.dir(**kwargs)
 
+    def makepasv(self):
+        self.ftp.makepasv()
 
-class FirmwareUpdater:
-    """
-    FirmwareUpdater class provides functionalities to download firmware
-    updates. It uses an instance of the FTPClient class to perform FTP operations.
-    """
 
-    def __init__(self, host, user, password):
+class HomeUpdate:
+    ftp: FTPClient = None
+    remote_manifest_path: str = None
+    manifest: dict = None
+    package_root: str = None
+    manifest_directories: list = None
+    manifest_files: list = None
+
+    @staticmethod
+    def item_is_file(item):
+        return uos.stat(f"/{item}")[0] == 0x8000
+
+    @staticmethod
+    def update_file(target, source_filepath):
         """
-        Constructs a FirmwareUpdater with provided FTP server details.
-
-        :param host: The FTP host address.
-        :param user: The username for the FTP host.
-        :param password: The password for the FTP host.
+        Overwrites a local file with the contents of another local file.
+        :param target: The path of the file to be updated.
+        :param source_filepath: The path of the file that will be used to update.
         """
-        self.ftp_client = FTPClient(host, user, password)
+        print("Updating file: ", target)
+        with open(source_filepath, 'rb') as src, open(target, 'wb') as dest:
+            dest.write(src.read())
+
+    @staticmethod
+    def rmdir(directory):
+        """
+        Recursively removes directories.
+        :param directory: The path of the directory to be removed.
+        """
+        try:
+            # List all files and subdirectories in the directory
+            for filename in uos.listdir(directory):
+                path = f"{directory}/{filename}"
+
+                # Check if this is a file or a subdirectory
+                if HomeUpdate.item_is_file(path):  # this is a file
+                    uos.remove(path)
+                else:  # this is a directory
+                    HomeUpdate.rmdir(path)
+
+            # Now that the directory is empty, remove the directory itself
+            uos.rmdir(directory)
+        except OSError as e:
+            if e.args[0] != errno.ENOENT:
+                raise
+            print(f"Directory {directory} does not exist to remove")
 
     @staticmethod
     def makedirs(path):
         """
         Recursively creates directories.
-
         :param path: The path of the directory to be created.
         """
         parts = path.split('/')
@@ -125,113 +159,86 @@ class FirmwareUpdater:
                 if e.args[0] != 17:
                     raise
 
-    @staticmethod
-    def _update_file(remote_file_path, local_file_path):
-        """
-        Overwrites a local file with the contents of another local file.
+    def __init__(self, ftp_client: FTPClient, remote_manifest_path):
+        self.ftp = ftp_client
+        self.remote_manifest_path = remote_manifest_path
+        self.update_dir = '/updates'
+        self.makedirs(self.update_dir)
+        self.can_update = False
 
-        :param remote_file_path: The path of the file to be updated.
-        :param local_file_path: The path of the file that will be used to update.
-        """
-        print("Updating file:")
-        print("  Source:", local_file_path)
-        print("  Destination:", remote_file_path)
-        print()
-        with open(local_file_path, 'rb') as src, open(remote_file_path, 'wb') as dest:
-            dest.write(src.read())
+    def _update_path(self, file):
+        path = file if file.startswith("/") else f"/{file}"
+        return f"{self.update_dir}{path}"
 
-    def update(self, target, source_filepath):
-        """
-        Updates a local file with the contents of another local file.
-
-        :param target: The path of the file to be updated.
-        :param source_filepath: The path of the file that will be used to update.
-        """
-        self._update_file(target, source_filepath)
-
-    def download_file(self, remote_path, local_path):
-        self.ftp_client.connect()
-        self.ftp_client.ftp.makepasv()
-        self.ftp_client.download_file(remote_path, local_path)
-        self.ftp_client.disconnect()
-
-
-class PackageDownloader:
-
-    def __init__(self, updater: FirmwareUpdater, observer_func=None):
-        self.observer_func = observer_func
-        self.updater = updater
-        self.package_name = ''
-        self.package_root = ''
-        self.current_remote_dir = ''
-        self.current_local_dir = '/updates'
-        self.directories = []
-        self.files = []
-
-    def log(self, message):
-        if self.observer_func is not None:
-            self.observer_func(message)
-
-    def sort_item(self, thing):
-        i = thing.split(' ')
-        isDir = thing[0] == "d"
-        name = i[-1]
-        if isDir:
-            if name == self.package_root:
-                return
-            self.directories.append(name)
-        else:
-            self.handle_file(name)
-
-    def handle_file(self, file_name):
-        remote_path = f"{self.current_remote_dir}/{file_name}"
-        local_path = f"{self.current_local_dir}/{file_name}"
-        print(f'handle_file: {file_name}')
-        print(f'remote: {remote_path}')
-        print(f'local: {local_path}')
-        self.files.append((remote_path, local_path))
-        # self.updater.ftp_client.download_file(remote_path, local_path)
-
-    def handle_dir(self, dir_name):
-        self.current_remote_dir = dir_name
-        self.updater.makedirs(self.current_local_dir)
-        self.updater.ftp_client.change_directory(self.current_remote_dir)
-        self.updater.ftp_client.list_directory(callback=self.sort_item)
-
-    def download_package(self, package_root, folder=None):
-
-        def download_files():
-            for i in self.files:
-                self.updater.ftp_client.download_file(i[0], i[1])
-            self.files = []
-
-        self.package_root = package_root
-        self.current_local_dir = '/updates'
-        if folder is not None:
-            self.package_root = package_root + folder
-            self.current_local_dir = f'{self.current_local_dir}{folder}'
-        self.log(f'downloading contents of: {self.package_root} - to: {self.current_local_dir}')
-        self.updater.ftp_client.connect()
-        self.updater.ftp_client.ftp.makepasv()
+    def download_manifest(self):
         try:
-            self.handle_dir(self.package_root)
-            download_files()
-
+            self.ftp.connect()
+            self.ftp.makepasv()
+            self.ftp.download_file(self.remote_manifest_path, self._update_path("manifest.json"))
+            self.ftp.disconnect()
         except Exception as e:
-            print(f'Download Package Error: {e}')
-            self.log(f'Download Package Error: {e}')
-        finally:
-            self.updater.ftp_client.disconnect()
+            raise DownloadError(f"Error Downloading manifest.json: {e}")
+
+    def open_manifest(self):
+        try:
+            with open(self._update_path("manifest.json"), 'r') as f:
+                self.manifest = json.load(f)
+        except Exception as e:
+            raise UpdateError(f"Error opening manifest.json: {e}")
+
+    def parse_manifest(self):
+        if self.manifest is None:
+            raise UpdateError("Must download a manifest.json file")
+        files = self.manifest.get('files')
+        directories = self.manifest.get("directories")
+        package_root = self.manifest.get("package_root")
+        self.manifest_files = files if files is not None else []
+        self.manifest_directories = directories if directories is not None else []
+        self.package_root = package_root if package_root is not None else ""
+
+    def prep_update_directories(self):
+        for i in self.manifest_directories:
+            self.makedirs(self._update_path(i))
+
+    def can_download(self):
+        has_package_root = self.package_root is not None and self.package_root
+        has_files_to_download = self.manifest_files is not None and self.manifest_files
+        return has_package_root and has_files_to_download
+
+    def download_manifest_files(self):
+        try:
+            self.ftp.connect()
+            self.ftp.makepasv()
+            for i in self.manifest_files:
+                remote_path = self.package_root + i
+                self.ftp.download_file(remote_path, self._update_path(i))
+            self.ftp.disconnect()
+        except Exception as e:
+            raise DownloadError("Error downloading update: ", e)
+        else:
+            self.can_update = True
+
+    def update_files(self):
+        for file in uos.listdir(self.update_dir):
+            if file == "manifest.json":
+                continue
+            if self.item_is_file(self._update_path(file)):
+                self.update_file(f'/{file}', self._update_path(file))
+            else:
+                self.rmdir(f'/{file}')  # Remove the existing directory from root
+                uos.rename(self._update_path(file), f'/{file}')
+
+    def remove_update_directory(self):
+        """
+        Removes the directory where the downloaded files are stored.
+        """
+        self.rmdir(self.update_dir)
 
 
 class UpdateManager:
     """
     UpdateManager class handles the firmware updates for the device.
     """
-
-    @staticmethod
-    def item_is_file(item):
-        return uos.stat(f"/{item}")[0] == 0x8000
 
     def __init__(self, host, user, password, observer_func=None):
         """
@@ -240,122 +247,23 @@ class UpdateManager:
         :param host (str): The FTP host address.
         :param user (str): The username for the FTP host.
         :param password (str): The password for the FTP host.
-        :param unit_id (str): The unit id of the device.
         """
-        self.firmware_updater = FirmwareUpdater(host, user, password)
+        self.ftp_client = FTPClient(host, user, password)
         self.observer_func = observer_func
 
     def observe(self, message):
         if self.observer_func is not None:
             self.observer_func(message, log_type='update')
 
-    def rmdir(self, directory):
-        """
-        Recursively removes directories.
-
-        :param directory: The path of the directory to be removed.
-        """
-        # List all files and subdirectories in the directory
-        for filename in uos.listdir(directory):
-            path = f"{directory}/{filename}"
-
-            # Check if this is a file or a subdirectory
-            if self.item_is_file(path):  # this is a file
-                uos.remove(path)
-            else:  # this is a directory
-                self.rmdir(path)
-
-        # Now that the directory is empty, remove the directory itself
-        uos.rmdir(directory)
-
-    def download_main(self, remote_path):
-        local_path = '/updates/main.py'
-        try:
-            self.firmware_updater.makedirs('/updates')
-            self.firmware_updater.download_file(remote_path, local_path)
-        except Exception as e:
-            raise DownloadError(f"Error Downloading main.py: {e}")
-
-    def download_manifest(self, remote_path):
-        local_path = '/updates/manifest.json'
-        try:
-            self.firmware_updater.makedirs('/updates')
-            self.firmware_updater.download_file(remote_path, local_path)
-        except Exception as e:
-            raise DownloadError(f"Error Downloading manifest.json: {e}")
-
-    def apply_updated_main(self):
-        try:
-            self.firmware_updater.update('/main.py', '/updates/main.py')
-        except Exception as e:
-            raise UpdateError(f"Error updating main.py: {e}")
-        else:
-            self.remove_update_directory()
-
-    def download_update(self, remote_root, directories):
-        try:
-            downloader = PackageDownloader(self.firmware_updater, observer_func=self.observe)
-            for d in directories:
-                downloader.download_package(remote_root, d)
-        except Exception as e:
-            raise DownloadError(f"Error downloading home package: {e}")
-
     def download_update_from_manifest(self, remote_path):
-        def open_manifest():
-            with open("updates/manifest.json", 'r') as f:
-                return json.load(f)
-
-        # get update manifest
-        self.download_manifest(remote_path)
-        manifest = open_manifest()
-
-        directories = manifest.get('directories')
-        files = manifest.get('files')
-        package_root = manifest.get('package_root')
-
-        can_continue = directories is not None and files is not None and package_root is not None
-        if not can_continue:
-            raise UpdateError()
-
-        # make directories in updates folder
-        for i in directories:
-            path = i if i.startswith("/") else f"/{i}"
-            self.firmware_updater.makedirs(f"/updates{path}")
-
-        # download files
-        self.firmware_updater.ftp_client.connect()
-        for i in files:
-            remote_path = package_root + i
-            local_path = f"/updates{i}"
-            self.firmware_updater.ftp_client.download_file(remote_path, local_path)
-        self.firmware_updater.ftp_client.disconnect()
-
-        # update files
-        for file in uos.listdir('/updates'):
-            if file == "manifest.json":
-                continue
-            if self.item_is_file(f'/updates/{file}'):
-                self.firmware_updater.update(f'/{file}', f'/updates/{file}')
-                print('updated file: ', file)
-
-            else:
-                self.rmdir(f'/{file}')  # Remove the existing directory from root
-                uos.rename(f'/updates/{file}', f'/{file}')
-                print('updated directory: ', file)
-
-        self.remove_update_directory()
-
-    def apply_updated_home_package(self):
-        try:
-            self.rmdir('/home')  # Remove the existing /home directory
-            uos.rename('/updates/home', '/home')  # Move /update/home to /home
-        except Exception as e:
-            raise UpdateError(f'Error updating home package: {e}')
-        else:
-            self.remove_update_directory()
-
-    def remove_update_directory(self):
-        """
-        Removes the directory where the downloaded files are stored.
-        """
-        self.rmdir("/updates")
+        update = HomeUpdate(self.ftp_client, remote_path)
+        update.download_manifest()
+        update.open_manifest()
+        update.parse_manifest()
+        if not update.can_download():
+            raise UpdateError("Unable to download update")
+        update.prep_update_directories()
+        update.download_manifest_files()
+        if update.can_update:
+            update.update_files()
+        update.remove_update_directory()
