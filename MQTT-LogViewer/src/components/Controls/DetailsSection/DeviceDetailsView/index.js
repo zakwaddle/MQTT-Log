@@ -163,21 +163,6 @@ const DeviceDetailsView = () => {
                 data && data.success && handleCleanUp()
             })
     }
-    const handleDownloadUpdate = () => sendMessage(device_id, {
-        "command": "update_home_package",
-        "remote_root": "/upload/Firmware/HomeModule/mpy",
-        "directories": [
-            '/home',
-            '/home/sensors',
-            '/home/lib',
-            '/home/lib/umqtt'
-        ]
-    }).then(data => console.log(data))
-
-    const handleUpdateMain = () => sendMessage(device_id, {
-        "command": "update_main",
-        "remote_file_path": "upload/Firmware/HomeModule/main.py"
-    }).then(data => console.log(data))
 
     const handleUpdate = () => sendMessage(device_id, {
         "command": "update",
@@ -226,8 +211,6 @@ const DeviceDetailsView = () => {
                 <div><Button onClick={showRenameConfirm}>Update Name</Button></div>
                 <div><Button onClick={updateHostView}>Update Host</Button></div>
                 <div><Button onClick={handleUpdate}>Update</Button></div>
-                <div><Button onClick={handleDownloadUpdate}>Update home</Button></div>
-                <div><Button onClick={handleUpdateMain}>Update main.py</Button></div>
             </Row>
             <SectionContainer>
                 <h4>Device Details:</h4>
