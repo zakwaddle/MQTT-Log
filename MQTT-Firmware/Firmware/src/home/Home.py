@@ -23,7 +23,7 @@ class Home:
     device_info = None
     device_configs = None
     sensor_configs = None
-    sensors = None
+    # sensors = None
 
     """
     Home class is a wrapper around the MQTT, WiFi and Update managers.
@@ -53,7 +53,7 @@ class Home:
 
     def log(self, log_message, log_type='info'):
         print(log_message)
-        if self.mqtt_manager.is_connected:
+        if self.mqtt_manager is not None and self.mqtt_manager.is_connected:
             self.publish(self.log_topic, json.dumps({
                 "unit_id": self.config_manager.device_id,
                 "display_name": self.config_manager.name,
@@ -68,15 +68,15 @@ class Home:
 
     def __init__(self):
         self.config_manager = ConfigManager(self)
-
+        self.device_id = self.config_manager.device_id
         if self.config_manager.platform not in ['rp2', 'esp32']:
             raise HomeError(f"Unsupported platform: {self.config_manager.platform}")
 
         self.command_topic = f"command/#"
-        self.log_topic = f"z-home/log/{self.config_manager.device_id}"
+        self.log_topic = f"z-home/log/{self.device_id}"
         self.timer = None
         self.sensors = []
-        print("\nPlatform: ", self.config_manager.platform, "\nUnit: ", self.config_manager.device_id)
+        print("\nPlatform: ", self.config_manager.platform, "\nUnit: ", self.device_id)
 
     def connect_wifi(self, ssid, password):
         self.wifi_manager = WiFiManager(ssid, password)
@@ -129,17 +129,17 @@ class Home:
             name = i.get('name')
             sensor_config = i.get('sensor_config')
             topics = sensor_config.get('topics') if sensor_config is not None else None
-            sensor_index = self.sensor_configs.index(i) + 1
+            sensor_index = self.config_manager.sensors.index(i) + 1
 
             if sensor_type == 'motion':
                 motion = HomeMotionSensor(self, name, sensor_config, topics, sensor_index)
-                motion.publish_discovery(self.device_info)
+                motion.publish_discovery(self.config_manager.device_info)
                 motion.enable_interrupt()
                 self.sensors.append(motion)
 
             elif sensor_type == 'led':
                 led = HomeLEDDimmer(self, name, sensor_config, topics, sensor_index)
-                led.publish_discovery(self.device_info)
+                led.publish_discovery(self.config_manager.device_info)
                 led.publish_brightness()
                 led.publish_state()
                 self.sensors.append(led)
@@ -148,7 +148,7 @@ class Home:
                 measurement_interval_ms = sensor_config.get('measurement_interval_ms')
                 weather = HomeWeatherSensor(self, name, sensor_config, topics, sensor_index)
                 weather.enable_interrupt(measurement_interval_ms)
-                weather.publish_discovery(self.device_info)
+                weather.publish_discovery(self.config_manager.device_info)
                 self.sensors.append(weather)
 
     def subscribe_sensors(self):
@@ -169,7 +169,7 @@ class Home:
         self.config_manager.obtain_config()
         self.config_manager.parse_config()
         self.connect_mqtt()
-        self.log("Connected to Wifi and MQTT")
+        self.log("Connected to Wifi and MQTT\n")
         self.connect_ftp()
         self.set_connection_check_timer()
         self.setup_sensors()

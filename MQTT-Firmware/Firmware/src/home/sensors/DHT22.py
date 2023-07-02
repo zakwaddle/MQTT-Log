@@ -99,7 +99,7 @@ class MQTTDHT22Sensor:
             "unit_of_measurement": chr(176) + "C",
             "state_topic": self.temp_topic,
             "device": device_info,
-            "unique_id": f"{self.mqtt_client.unit_id}-{self.sensor_index}_temp",
+            "unique_id": f"{self.mqtt_client.device_id}-{self.sensor_index}_temp",
         }
 
         config_humidity = {
@@ -108,7 +108,7 @@ class MQTTDHT22Sensor:
             "unit_of_measurement": "%",
             "state_topic": self.humidity_topic,
             "device": device_info,
-            "unique_id": f"{self.mqtt_client.unit_id}-{self.sensor_index}_humidity",
+            "unique_id": f"{self.mqtt_client.device_id}-{self.sensor_index}_humidity",
         }
 
         self.mqtt_client.publish(self.temp_discovery_topic, json.dumps(config_temp).encode("utf-8"), retain=True)
