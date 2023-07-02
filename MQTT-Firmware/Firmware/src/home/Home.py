@@ -169,15 +169,18 @@ class Home:
         self.config_manager.obtain_config()
         self.config_manager.parse_config()
         self.connect_mqtt()
-        self.log("Connected to Wifi and MQTT\n")
         self.connect_ftp()
-        self.set_connection_check_timer()
-        self.setup_sensors()
-        print(self.sensors)
-        self.setup_subscriptions()
+
         connected = self.wifi_manager.is_connected() and self.mqtt_manager.is_connected
         if not connected:
             raise HomeError("Wi-Fi and MQTT Connection Error")
+        self.log("Connected to Wifi and MQTT\n")
+
+        self.set_connection_check_timer()
+        self.setup_sensors()
+        self.setup_subscriptions()
+        print(self.sensors)
+
         self.status_led_blink()
         if self.config_manager.led_on_after_connect:
             self.status_led_on()
