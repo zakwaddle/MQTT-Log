@@ -78,7 +78,7 @@ class MQTTMotionSensor:
             "name": self.name,
             "device_class": "motion",
             "device": device_info,
-            "unique_id": f"{self.mqtt_client.display_name}-{self.name}",
+            "unique_id": f"{device_info.get('name')}-{self.name}",
             "payload_off": "0",
             "payload_on": "1",
             "state_topic": self.state_topic

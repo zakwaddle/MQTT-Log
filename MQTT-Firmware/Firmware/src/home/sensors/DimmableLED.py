@@ -130,7 +130,7 @@ class MQTTDimmableLight:
             "payload_off": "OFF",
             "optimistic": False,
             "device": device_info,
-            "unique_id": f"{self.mqtt_client.display_name}-{self.name}",
+            "unique_id": f"{device_info.get('name')}-{self.name}",
 
         }
         self.mqtt_client.publish(self.discovery_topic, json.dumps(config), retain=True)

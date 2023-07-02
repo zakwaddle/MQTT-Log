@@ -5,9 +5,9 @@ from .WiFiManager import WiFiManager
 from .MQTTManager import MQTTManager
 from .UpdateManager import UpdateManager
 from .sensors.StatusLED import StatusLED
+from .SensorManager import SensorManager
 from .ConfigManager import ConfigManager
 from .CommandMessage import CommandMessage, MessageError
-from .sensors import HomeMotionSensor, HomeWeatherSensor, HomeLEDDimmer
 from .Timer import Timer
 
 
@@ -19,16 +19,10 @@ class Home:
     wifi_manager: WiFiManager = None
     mqtt_manager: MQTTManager = None
     update_manager: UpdateManager = None
-    display_name = None
+    sensor_manager: SensorManager = None
     device_info = None
     device_configs = None
     sensor_configs = None
-    # sensors = None
-
-    """
-    Home class is a wrapper around the MQTT, WiFi and Update managers.
-    It provides a simple interface to handle connections and updates.
-    """
 
     @staticmethod
     def restart_device(delay_seconds=None):
@@ -123,45 +117,14 @@ class Home:
     def setup_sensors(self):
         if self.config_manager.sensors is None:
             return
-
-        for i in self.config_manager.sensors:
-            sensor_type = i.get('sensor_type')
-            name = i.get('name')
-            sensor_config = i.get('sensor_config')
-            topics = sensor_config.get('topics') if sensor_config is not None else None
-            sensor_index = self.config_manager.sensors.index(i) + 1
-
-            if sensor_type == 'motion':
-                motion = HomeMotionSensor(self, name, sensor_config, topics, sensor_index)
-                motion.publish_discovery(self.config_manager.device_info)
-                motion.enable_interrupt()
-                self.sensors.append(motion)
-
-            elif sensor_type == 'led':
-                led = HomeLEDDimmer(self, name, sensor_config, topics, sensor_index)
-                led.publish_discovery(self.config_manager.device_info)
-                led.publish_brightness()
-                led.publish_state()
-                self.sensors.append(led)
-
-            elif sensor_type == 'weather':
-                measurement_interval_ms = sensor_config.get('measurement_interval_ms')
-                weather = HomeWeatherSensor(self, name, sensor_config, topics, sensor_index)
-                weather.enable_interrupt(measurement_interval_ms)
-                weather.publish_discovery(self.config_manager.device_info)
-                self.sensors.append(weather)
-
-    def subscribe_sensors(self):
-        if self.sensors is not None:
-            for s in self.sensors:
-                if hasattr(s, 'subscribe_to'):
-                    for t in s.subscribe_to:
-                        self.subscribe(t)
+        self.sensor_manager = SensorManager(self)
+        self.sensor_manager.create_sensors()
 
     def setup_subscriptions(self):
         self.set_callback(self.on_message)
         self.subscribe(self.command_topic)
-        self.subscribe_sensors()
+        if self.sensor_manager is not None:
+            self.sensor_manager.subscribe_sensor()
 
     def start_sequence(self):
         self.config_manager.get_startup_settings()
@@ -187,10 +150,8 @@ class Home:
 
     def on_message(self, topic, msg):
 
-        if self.sensors is not None:
-            for s in self.sensors:
-                if hasattr(s, 'on_message'):
-                    s.on_message(topic, msg)
+        if self.sensor_manager is not None:
+            self.sensor_manager.on_message(topic, msg)
 
         def should_respond():
             t = topic.decode('utf-8')
@@ -203,7 +164,6 @@ class Home:
             try:
                 command = CommandMessage(self, msg)
                 command.execute_command()
-
             except MessageError as e:
                 self.log(f'MessageError: {e.args}', log_type='error')
             except Exception as e:
