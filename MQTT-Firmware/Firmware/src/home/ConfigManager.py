@@ -89,8 +89,10 @@ class ConfigManager:
         self.wifi_password = self.start_up_settings.get('wifi_password')
 
     def request_device_config(self):
-        print(f'requesting settings from: {self.host}')
-        response = urequests.get(f'{self.host}/api/home/devices/{self.device_id}')
+        url = f'{self.host}/api/home/devices/{self.device_id}'
+        print(f'requesting settings from: {url}')
+
+        response = urequests.get(url)
         if response.status_code == 200:
             print(f'received settings')
             self.home_device = response.json()
@@ -115,6 +117,7 @@ class ConfigManager:
     def parse_config(self):
         self.name = self.home_device.get('display_name')
         self.device_config = self.home_device.get('config')
+        self.device_info = self.home_device.get('device_info')
         self.sensors = self.device_config.get('sensors')
 
         device_settings = self.device_config.get('device_settings')
@@ -141,3 +144,11 @@ class ConfigManager:
             self.announce_device_to_home_server()
         if self.home_device is None:
             raise ConfigError('Unable to locate device configs')
+
+    def update_host(self, new_host):
+        self.host = new_host
+        has_host = self.host is not None and self.host
+        has_wifi_ssid = self.wifi_ssid is not None and self.wifi_ssid
+        has_wifi_password = self.wifi_password is not None and self.wifi_password
+        if has_host and has_wifi_ssid and has_wifi_password:
+            self.__save_startup_settings()
