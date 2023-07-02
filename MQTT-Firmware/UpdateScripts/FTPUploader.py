@@ -9,6 +9,8 @@ class FTPUploader:
         self.password = password
         self.ftp = None
         self.excluded_files = []
+        self.uploaded_files = []
+        self.uploaded_directories = []
 
     def set_excluded_files(self, excluded):
         self.excluded_files = excluded
@@ -16,7 +18,6 @@ class FTPUploader:
     def connect(self):
         self.ftp = ftplib.FTP()
         self.ftp.connect(self.host)
-        # print('connected to ', self.host)
         self.ftp.login(self.user, self.password)
 
     def change_directory(self, path):
@@ -44,11 +45,14 @@ class FTPUploader:
             remote_path = f"{remote_folder}/{item}"
 
             if os.path.isfile(local_path):
+                self.uploaded_files.append(remote_path)
                 self.connect()
                 self.upload_file(local_path, remote_path)
                 print(f'\tuploaded: {item}')
                 self.disconnect()
+
             elif os.path.isdir(local_path):
+                self.uploaded_directories.append(remote_path)
                 self.connect()
                 self.create_directory(remote_path)
                 self.disconnect()
