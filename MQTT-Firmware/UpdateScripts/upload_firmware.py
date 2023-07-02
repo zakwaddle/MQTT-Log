@@ -23,6 +23,7 @@ class FirmwareUploader:
 
     def create_home_package_folder(self):
         self.ftp_uploader.connect()
+        self.ftp_uploader.create_directory("/upload")
         self.ftp_uploader.create_directory(self.ftp_home_folder)
         self.ftp_uploader.disconnect()
 
@@ -41,9 +42,12 @@ class FirmwareUploader:
         self.ftp_uploader.upload_file('./manifest.json', f'{self.ftp_home_folder}/manifest.json')
 
     def upload_home_package(self):
-        print("uploading home folder")
+        # self.ftp_uploader.create_directory("/upload/Firmware")
+
         self.create_home_package_folder()
+        print("clearing home folder")
         self.ftp_uploader.clear_folder(self.ftp_home_folder)
+        print("uploading home folder")
         self.ftp_uploader.upload_folder(self.local_home_path, self.ftp_home_folder)
         self.create_package_manifest()
         print("uploading manifest")
