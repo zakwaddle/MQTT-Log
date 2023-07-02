@@ -20,18 +20,18 @@ class SensorManager:
             if sensor_type == "motion":
                 self.create_motion_sensor(name, sensor_config, topics, sensor_index)
             elif sensor_type == "led":
-                self.create_motion_sensor(name, sensor_config, topics, sensor_index)
+                self.create_led_dimmer(name, sensor_config, topics, sensor_index)
             elif sensor_type == "weather":
-                self.create_motion_sensor(name, sensor_config, topics, sensor_index)
+                self.create_weather_sensor(name, sensor_config, topics, sensor_index)
 
     def create_motion_sensor(self, name, sensor_config, topics, sensor_index):
-        motion = HomeMotionSensor(self, name, sensor_config, topics, sensor_index)
+        motion = HomeMotionSensor(self.home_client, name, sensor_config, topics, sensor_index)
         motion.publish_discovery(self.device_info)
         motion.enable_interrupt()
         self.sensors.append(motion)
 
     def create_led_dimmer(self, name, sensor_config, topics, sensor_index):
-        led = HomeLEDDimmer(self, name, sensor_config, topics, sensor_index)
+        led = HomeLEDDimmer(self.home_client, name, sensor_config, topics, sensor_index)
         led.publish_discovery(self.device_info)
         led.publish_brightness()
         led.publish_state()
@@ -39,15 +39,17 @@ class SensorManager:
 
     def create_weather_sensor(self, name, sensor_config, topics, sensor_index):
         measurement_interval_ms = sensor_config.get('measurement_interval_ms')
-        weather = HomeWeatherSensor(self, name, sensor_config, topics, sensor_index)
+        weather = HomeWeatherSensor(self.home_client, name, sensor_config, topics, sensor_index)
         weather.publish_discovery(self.device_info)
         weather.enable_interrupt(measurement_interval_ms)
         self.sensors.append(weather)
 
-    def subscribe_sensor(self):
+    def subscribe_sensors(self):
         for s in self.sensors:
+            print("\nsubscribing sensor: ", s)
             if hasattr(s, 'subscribe_to'):
                 for t in s.subscribe_to:
+                    print("\tsubscribed to: ", t)
                     self.home_client.subscribe(t)
 
     def on_message(self, topic, msg):

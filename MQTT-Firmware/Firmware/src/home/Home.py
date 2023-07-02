@@ -124,7 +124,7 @@ class Home:
         self.set_callback(self.on_message)
         self.subscribe(self.command_topic)
         if self.sensor_manager is not None:
-            self.sensor_manager.subscribe_sensor()
+            self.sensor_manager.subscribe_sensors()
 
     def start_sequence(self):
         self.config_manager.get_startup_settings()
@@ -142,7 +142,7 @@ class Home:
         self.set_connection_check_timer()
         self.setup_sensors()
         self.setup_subscriptions()
-        print(self.sensors)
+        print(self.sensor_manager.sensors)
 
         self.status_led_blink()
         if self.config_manager.led_on_after_connect:
@@ -150,8 +150,7 @@ class Home:
 
     def on_message(self, topic, msg):
 
-        if self.sensor_manager is not None:
-            self.sensor_manager.on_message(topic, msg)
+        self.sensor_manager.on_message(topic, msg)
 
         def should_respond():
             t = topic.decode('utf-8')
