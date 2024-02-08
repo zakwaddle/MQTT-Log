@@ -7,11 +7,10 @@ class StatusLED:
 
     def __init__(self):
         status_pins = {
-            "Raspberry Pi Pico W with RP2040": "LED",
-            "ESP32 module with ESP32": 2,
-            "LOLIN_S2_MINI with ESP32-S2FN4R2": 15
+            "rp2": "LED",
+            "esp32": 2
         }
-        self.platform = sys.implementation._machine
+        self.platform = sys.platform
         self.led_pin = machine.Pin(status_pins[self.platform], machine.Pin.OUT)
         self.off()
 

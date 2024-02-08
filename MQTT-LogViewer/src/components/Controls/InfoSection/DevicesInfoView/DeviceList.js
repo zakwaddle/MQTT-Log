@@ -72,7 +72,8 @@ const Device = ({deviceData}) => {
     }
     const platform = (deviceData.platform === 'rp2' ? 'PicoW' : 'ESP32')
     return (
-        <DeviceContainer selected={isSelected} hide={!isSelected && !noSelection}
+        <DeviceContainer selected={isSelected}
+                         hide={!isSelected && !noSelection}
                          onClick={handleClick}>
             <PropStack label={'Name'}>{deviceData.display_name}</PropStack>
             <p><b>{platform}</b></p>
@@ -81,7 +82,7 @@ const Device = ({deviceData}) => {
 }
 export const DeviceList = ({selectedDevice, setSelectedDevice}) => {
     const devices = useSelector(state => state['globalState']['devices'])
-
+    // console.log(devices)
     return (
         <DeviceListContainer hasSelected={selectedDevice !== null}>
             {devices.map(device => <Device key={device.id}

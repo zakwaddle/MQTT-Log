@@ -18,7 +18,8 @@ class DeviceConfig(ModelBase):
     mqtt_broker = relationship("MQTTBroker", uselist=False)
 
     device = relationship("HomeDevice", back_populates="config")  # one-to-one relationship
-    sensors = relationship("DeviceSensor", back_populates="device_config")  # one-to-many relationship
+    # sensors = relationship("DeviceSensor", back_populates="device_config")  # one-to-many relationship
+    sensors = relationship("DeviceSensor", back_populates="device_config", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<DeviceConfig - {self.id} | {self.device_id}>"

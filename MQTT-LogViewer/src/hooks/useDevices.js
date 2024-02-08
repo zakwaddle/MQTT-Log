@@ -18,7 +18,8 @@ const useDevices = () => {
             }
             fetchDevices().then(data => {
                 const newDevices = data.filter(device => device.display_name === null)
-                const devices = data.filter(device => device.display_name !== null)
+                // const devices = data.filter(device => device.display_name !== null)
+                const devices = data
                 if (selectedDeviceId){
                     const selected = data.filter(device => device.id === selectedDeviceId)
                     selected && dispatch(globalStateActions.updateSelectedDevice(selected[0]))
